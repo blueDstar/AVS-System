@@ -1,0 +1,11 @@
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/yolo26_seg.cpp: In constructor ‘YOLO26Seg::YOLO26Seg()’:
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/yolo26_seg.cpp:13:13: error: ‘class ncnn::Option’ has no member named ‘use_shader_pack8’
+   13 |     net.opt.use_shader_pack8 = false;
+      |             ^~~~~~~~~~~~~~~~
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/yolo26_seg.cpp: In member function ‘int YOLO26Seg::detect(const cv::Mat&, std::vector<Object>&, float, float)’:
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/yolo26_seg.cpp:45:8: error: ‘class ncnn::Extractor’ has no member named ‘set_num_threads’
+   45 |     ex.set_num_threads(4);
+      |        ^~~~~~~~~~~~~~~
+gmake[2]: *** [CMakeFiles/yolo26_seg_lib.dir/build.make:76: CMakeFiles/yolo26_seg_lib.dir/src/yolo26_seg.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:141: CMakeFiles/yolo26_seg_lib.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2

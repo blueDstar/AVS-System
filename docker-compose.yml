@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  avs_perception:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: avs_perception:latest
+    container_name: avs_perception_container
+    network_mode: host
+    ipc: host
+    privileged: true
+    volumes:
+      # Bind mount workspace, models, and test videos
+      - ./ros2_ws:/workspace/ros2_ws
+      - ./models:/workspace/models
+      - ./test:/workspace/test
+    environment:
+      - ROS_DOMAIN_ID=0
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    devices:
+      # Map camera device (default symlink for dev camera)
+      - "/dev/video0:/dev/video_source"
+    command: bash -c "colcon build --symlink-install && source install/setup.bash && ros2 run avs_perception ncnn_inference_node"

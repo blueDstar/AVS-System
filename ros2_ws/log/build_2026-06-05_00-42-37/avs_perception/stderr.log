@@ -1,0 +1,8 @@
+In file included from /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/yolo26_seg.cpp:1:
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/include/avs_perception/yolo26_seg.hpp:7:10: fatal error: ncnn/net.h: No such file or directory
+    7 | #include <ncnn/net.h>
+      |          ^~~~~~~~~~~~
+compilation terminated.
+gmake[2]: *** [CMakeFiles/yolo26_seg_lib.dir/build.make:76: CMakeFiles/yolo26_seg_lib.dir/src/yolo26_seg.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:141: CMakeFiles/yolo26_seg_lib.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
