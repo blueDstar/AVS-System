@@ -1,1 +1,1 @@
-/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.sh
+/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.sh

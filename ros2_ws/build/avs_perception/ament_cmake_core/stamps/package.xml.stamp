@@ -4,13 +4,14 @@
   <name>avs_perception</name>
   <version>0.0.0</version>
   <description>CPU-optimized YOLO26 segmentation inference node utilizing NCNN.</description>
-  <maintainer email="goln@todo.todo">goln</maintainer>
+  <maintainer email="longhuynh.ai.contact@gmail.com">goln</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
 

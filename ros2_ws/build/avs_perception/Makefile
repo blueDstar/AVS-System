@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception
+CMAKE_SOURCE_DIR = /workspace/ros2_ws/src/avs_perception
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/goln/SimpleSysIDV/ros2_ws/build/avs_perception
+CMAKE_BINARY_DIR = /workspace/ros2_ws/build/avs_perception
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -142,9 +142,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/CMakeFiles /home/goln/SimpleSysIDV/ros2_ws/build/avs_perception//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /workspace/ros2_ws/build/avs_perception/CMakeFiles /workspace/ros2_ws/build/avs_perception//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /workspace/ros2_ws/build/avs_perception/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -236,6 +236,19 @@ video_test_node/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/video_test_node.dir/build.make CMakeFiles/video_test_node.dir/build
 .PHONY : video_test_node/fast
 
+#=============================================================================
+# Target rules for targets named video_publisher_node
+
+# Build rule for target.
+video_publisher_node: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 video_publisher_node
+.PHONY : video_publisher_node
+
+# fast build rule for target.
+video_publisher_node/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/video_publisher_node.dir/build.make CMakeFiles/video_publisher_node.dir/build
+.PHONY : video_publisher_node/fast
+
 src/ncnn_inference_node.o: src/ncnn_inference_node.cpp.o
 .PHONY : src/ncnn_inference_node.o
 
@@ -259,6 +272,30 @@ src/ncnn_inference_node.s: src/ncnn_inference_node.cpp.s
 src/ncnn_inference_node.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ncnn_inference_node.dir/build.make CMakeFiles/ncnn_inference_node.dir/src/ncnn_inference_node.cpp.s
 .PHONY : src/ncnn_inference_node.cpp.s
+
+src/video_publisher_node.o: src/video_publisher_node.cpp.o
+.PHONY : src/video_publisher_node.o
+
+# target to build an object file
+src/video_publisher_node.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/video_publisher_node.dir/build.make CMakeFiles/video_publisher_node.dir/src/video_publisher_node.cpp.o
+.PHONY : src/video_publisher_node.cpp.o
+
+src/video_publisher_node.i: src/video_publisher_node.cpp.i
+.PHONY : src/video_publisher_node.i
+
+# target to preprocess a source file
+src/video_publisher_node.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/video_publisher_node.dir/build.make CMakeFiles/video_publisher_node.dir/src/video_publisher_node.cpp.i
+.PHONY : src/video_publisher_node.cpp.i
+
+src/video_publisher_node.s: src/video_publisher_node.cpp.s
+.PHONY : src/video_publisher_node.s
+
+# target to generate assembly for a file
+src/video_publisher_node.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/video_publisher_node.dir/build.make CMakeFiles/video_publisher_node.dir/src/video_publisher_node.cpp.s
+.PHONY : src/video_publisher_node.cpp.s
 
 src/video_test_node.o: src/video_test_node.cpp.o
 .PHONY : src/video_test_node.o
@@ -324,11 +361,15 @@ help:
 	@echo "... avs_perception_uninstall"
 	@echo "... uninstall"
 	@echo "... ncnn_inference_node"
+	@echo "... video_publisher_node"
 	@echo "... video_test_node"
 	@echo "... yolo26_seg_lib"
 	@echo "... src/ncnn_inference_node.o"
 	@echo "... src/ncnn_inference_node.i"
 	@echo "... src/ncnn_inference_node.s"
+	@echo "... src/video_publisher_node.o"
+	@echo "... src/video_publisher_node.i"
+	@echo "... src/video_publisher_node.s"
 	@echo "... src/video_test_node.o"
 	@echo "... src/video_test_node.i"
 	@echo "... src/video_test_node.s"

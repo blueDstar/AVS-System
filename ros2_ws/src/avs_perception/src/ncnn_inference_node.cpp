@@ -6,6 +6,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/compressed_image.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include <opencv2/opencv.hpp>
 
@@ -40,8 +41,8 @@ public:
         }
         RCLCPP_INFO(this->get_logger(), "Model loaded successfully.");
 
-        // Create publisher for compressed images
-        compressed_pub_ = this->create_publisher<sensor_msgs::msg::CompressedImage>(output_topic, 10);
+        // Create publisher for telemetry data
+        telemetry_pub_ = this->create_publisher<std_msgs::msg::String>("/avs/telemetry", 10);
 
         // Create subscription to raw camera images
         image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
@@ -49,13 +50,16 @@ public:
             std::bind(&NCNNInferenceNode::image_callback, this, std::placeholders::_1)
         );
 
-        RCLCPP_INFO(this->get_logger(), "Subscribed to %s, publishing segmentation to %s", input_topic.c_str(), output_topic.c_str());
+        RCLCPP_INFO(this->get_logger(), "Subscribed to %s, publishing telemetry to /avs/telemetry", input_topic.c_str());
     }
 
 private:
     void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
         auto start_time = std::chrono::high_resolution_clock::now();
-        bool is_someone_subscribed = (compressed_pub_->get_subscription_count() > 0);
+
+        // Update parameters dynamically from standard parameter service
+        prob_threshold_ = static_cast<float>(this->get_parameter("prob_threshold").as_double());
+        nms_threshold_ = static_cast<float>(this->get_parameter("nms_threshold").as_double());
 
         // Convert ROS2 image to cv::Mat
         cv_bridge::CvImagePtr cv_ptr;
@@ -67,45 +71,94 @@ private:
         }
 
         // Run inference
+        auto inference_start = std::chrono::high_resolution_clock::now();
         std::vector<Object> objects;
         if (yolo_->detect(cv_ptr->image, objects, prob_threshold_, nms_threshold_) != 0) {
             RCLCPP_ERROR(this->get_logger(), "Inference detection failed");
             return;
         }
+        auto inference_end = std::chrono::high_resolution_clock::now();
+        double inference_latency = std::chrono::duration<double, std::milli>(inference_end - inference_start).count();
 
-        if (is_someone_subscribed) {
-            // Draw bounding boxes and segmentation masks
-            yolo_->draw(cv_ptr->image, objects);
+        // Measure full latency (inference + contour extraction + JSON serialization)
+        auto end_time = std::chrono::high_resolution_clock::now();
+        double full_latency = std::chrono::duration<double, std::milli>(end_time - start_time).count();
+        double fps = 1000.0 / full_latency;
 
-            // Publish as CompressedImage (JPEG format)
-            sensor_msgs::msg::CompressedImage compressed_msg;
-            compressed_msg.header = msg->header;
-            compressed_msg.format = "jpeg";
+        RCLCPP_DEBUG(this->get_logger(), "Inference Latency: %.2f ms (FPS: %.1f)", full_latency, fps);
 
-            std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 80}; // Good trade-off between bandwidth & quality
-            cv::imencode(".jpg", cv_ptr->image, compressed_msg.data, params);
+        // Publish JSON telemetry
+        const std::vector<std::string> class_names = {
+            "dashed-white", "double-solid-white", "main-lane", "other-lane",
+            "solid-white", "solid-yellow", "turn-lane", "vehicle"
+        };
 
-            compressed_pub_->publish(compressed_msg);
-
-            // Measure full latency (inference + visualization + compression)
-            auto end_time = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
-            double fps = 1000.0 / elapsed.count();
-            RCLCPP_DEBUG(this->get_logger(), "Full Pipeline Latency (with streaming): %.2f ms (FPS: %.1f)", elapsed.count(), fps);
-        } else {
-            // Measure pure inference latency only
-            auto end_time = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
-            double fps = 1000.0 / elapsed.count();
-            RCLCPP_DEBUG(this->get_logger(), "Pure Inference Latency: %.2f ms (FPS: %.1f) [Streaming: IDLE]", elapsed.count(), fps);
+        std::string json_str = "{";
+        json_str += "\"inference_latency_ms\":" + std::to_string(inference_latency) + ",";
+        json_str += "\"full_latency_ms\":" + std::to_string(full_latency) + ",";
+        json_str += "\"fps\":" + std::to_string(fps) + ",";
+        json_str += "\"streaming\":true,";
+        
+        json_str += "\"detections\":{";
+        for (size_t i = 0; i < class_names.size(); i++) {
+            int count = 0;
+            for (const auto& obj : objects) {
+                if (obj.label == static_cast<int>(i)) {
+                    count++;
+                }
+            }
+            json_str += "\"" + class_names[i] + "\":" + std::to_string(count);
+            if (i < class_names.size() - 1) {
+                json_str += ",";
+            }
         }
+        json_str += "},";
+
+        json_str += "\"objects\":[";
+        for (size_t i = 0; i < objects.size(); i++) {
+            const auto& obj = objects[i];
+            json_str += "{";
+            json_str += "\"label\":" + std::to_string(obj.label) + ",";
+            json_str += "\"prob\":" + std::to_string(obj.prob) + ",";
+            json_str += "\"box\":[" + std::to_string(obj.rect.x) + "," 
+                                   + std::to_string(obj.rect.y) + "," 
+                                   + std::to_string(obj.rect.width) + "," 
+                                   + std::to_string(obj.rect.height) + "],";
+            
+            // Extract contours of the mask for this object to represent polygons
+            std::vector<std::vector<cv::Point>> contours;
+            std::vector<cv::Vec4i> hierarchy;
+            if (!obj.mask.empty()) {
+                cv::findContours(obj.mask, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+            }
+            
+            json_str += "\"polygons\":[";
+            for (size_t c = 0; c < contours.size(); c++) {
+                json_str += "[";
+                for (size_t p = 0; p < contours[c].size(); p++) {
+                    json_str += "[" + std::to_string(contours[c][p].x) + "," + std::to_string(contours[c][p].y) + "]";
+                    if (p < contours[c].size() - 1) json_str += ",";
+                }
+                json_str += "]";
+                if (c < contours.size() - 1) json_str += ",";
+            }
+            json_str += "]";
+            json_str += "}";
+            if (i < objects.size() - 1) json_str += ",";
+        }
+        json_str += "]";
+        json_str += "}";
+
+        auto telemetry_msg = std_msgs::msg::String();
+        telemetry_msg.data = json_str;
+        telemetry_pub_->publish(telemetry_msg);
     }
 
     std::unique_ptr<YOLO26Seg> yolo_;
     float prob_threshold_;
     float nms_threshold_;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
-    rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_pub_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr telemetry_pub_;
 };
 
 int main(int argc, char* argv[]) {

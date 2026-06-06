@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVS AI Autonomous Vision System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="pulse-indicator active"></span>
+                <h1>AI Autonomous Vision System</h1>
+                <span class="badge">CPU-Centric NCNN</span>
+            </div>
+            <div class="system-status">
+                <span class="status-label">SYSTEM STATUS:</span>
+                <span id="sys-status" class="status-value success">ONLINE</span>
+            </div>
+        </header>
+
+        <!-- MAIN DASHBOARD GRID -->
+        <main class="dashboard-grid">
+            
+            <!-- LEFT PANEL: STREAM VIEW -->
+            <section class="panel main-stream-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">📹</span> Live Perception Stream</h2>
+                    <div class="stream-badge" id="stream-active-badge">
+                        <span class="badge-dot"></span>
+                        <span class="badge-text">LIVE</span>
+                    </div>
+                </div>
+                <div class="stream-container">
+                    <img id="mjpeg-stream" src="/api/stream" alt="Live perception stream offline" />
+                    <div class="stream-overlay" id="stream-loader">
+                        <div class="spinner"></div>
+                        <p>Awaiting video stream from ROS2...</p>
+                    </div>
+                </div>
+                <div class="stream-footer">
+                    <div class="source-info">
+                        <span class="label">ACTIVE SOURCE:</span>
+                        <span id="active-source-display" class="value">video_test1.mp4</span>
+                    </div>
+                    <div class="resolution-info">
+                        <span class="label">TOPIC:</span>
+                        <span class="value">/camera/image_raw/compressed</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: METRICS & CONTROLS -->
+            <div class="side-panel-group">
+                
+                <!-- PERFORMANCE METRICS -->
+                <section class="panel metrics-panel">
+                    <div class="panel-header">
+                        <h2><span class="icon">📊</span> Telemetry & Performance</h2>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-title">Inference Latency</span>
+                            <span class="metric-value" id="val-inf-latency">0.0 <span class="unit">ms</span></span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-title">Full Pipeline Latency</span>
+                            <span class="metric-value" id="val-full-latency">0.0 <span class="unit">ms</span></span>
+                        </div>
+                        <div class="metric-card primary">
+                            <span class="metric-title">Processing FPS</span>
+                            <span class="metric-value" id="val-fps">0.0 <span class="unit">FPS</span></span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONTROL PANEL -->
+                <section class="panel control-panel">
+                    <div class="panel-header">
+                        <h2><span class="icon">⚙️</span> Control & Reconfigure</h2>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label-row">
+                            <label for="slider-prob">Probability Threshold</label>
+                            <span class="control-value-badge" id="val-prob">0.25</span>
+                        </div>
+                        <input type="range" id="slider-prob" min="0.05" max="0.95" step="0.05" value="0.25" class="custom-slider">
+                        <span class="slider-hint">Minimum confidence level required for detections.</span>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label-row">
+                            <label for="slider-nms">NMS Threshold</label>
+                            <span class="control-value-badge" id="val-nms">0.45</span>
+                        </div>
+                        <input type="range" id="slider-nms" min="0.1" max="0.9" step="0.05" value="0.45" class="custom-slider">
+                        <span class="slider-hint">Non-Maximum Suppression overlap threshold.</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="select-mode">Run Mode</label>
+                        <select id="select-mode" class="custom-select">
+                            <option value="camera">Real-time USB Camera</option>
+                            <option value="video">Simulation Video</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group" id="video-source-group">
+                        <label for="select-video">Change Video Source</label>
+                        <select id="select-video" class="custom-select">
+                            <option value="video_test1.mp4" selected>video_test1.mp4</option>
+                            <option value="video_test2.mp4">video_test2.mp4</option>
+                            <option value="video_test3.mp4">video_test3.mp4</option>
+                            <option value="video_test4.mp4">video_test4.mp4</option>
+                            <option value="video_test5.mp4">video_test5.mp4</option>
+                            <option value="video_test6.mp4">video_test6.mp4</option>
+                            <option value="video_test7.mp4">video_test7.mp4</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="btn-apply" class="btn primary">Apply Settings</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- CHARTS & DETECTIONS -->
+        <div class="bottom-grid">
+            <!-- REAL-TIME CHARTS -->
+            <section class="panel chart-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">📈</span> Live Performance History</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- DETECTION STATISTICS -->
+            <section class="panel detections-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">🔍</span> Detected Objects</h2>
+                </div>
+                <div class="detections-container">
+                    <div class="detection-row">
+                        <span class="detection-class"><span class="class-dot ego-lane"></span>Main Lane (Ego)</span>
+                        <span class="detection-count" id="count-main-lane">0</span>
+                    </div>
+                    <div class="detection-row">
+                        <span class="detection-class"><span class="class-dot other-lane"></span>Adjacent Lanes</span>
+                        <span class="detection-count" id="count-other-lane">0</span>
+                    </div>
+                    <div class="detection-row">
+                        <span class="detection-class"><span class="class-dot vehicle"></span>Vehicles</span>
+                        <span class="detection-count" id="count-vehicle">0</span>
+                    </div>
+                    <div class="detection-row">
+                        <span class="detection-class"><span class="class-dot solid-white"></span>Solid White Lane</span>
+                        <span class="detection-count" id="count-solid-white">0</span>
+                    </div>
+                    <div class="detection-row">
+                        <span class="detection-class"><span class="class-dot solid-yellow"></span>Solid Yellow Lane</span>
+                        <span class="detection-count" id="count-solid-yellow">0</span>
+                    </div>
+                    <div class="detection-row">
+                        <span class="detection-class"><span class="class-dot dashed-white"></span>Dashed White Lane</span>
+                        <span class="detection-count" id="count-dashed-white">0</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

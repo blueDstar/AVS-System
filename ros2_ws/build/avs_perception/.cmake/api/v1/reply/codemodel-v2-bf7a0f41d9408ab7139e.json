@@ -1,0 +1,106 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-4b9538cd71214662cb15.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "avs_perception",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "avs_perception_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-avs_perception_uninstall-3160599093335dd8f41a.json",
+					"name" : "avs_perception_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ncnn_inference_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ncnn_inference_node-55c502d430504d892da1.json",
+					"name" : "ncnn_inference_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-75bed38ce459101b0122.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "video_publisher_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-video_publisher_node-2bad83cedd85006fe8fb.json",
+					"name" : "video_publisher_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "video_test_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-video_test_node-78df552fbc11302600c1.json",
+					"name" : "video_test_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "yolo26_seg_lib::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-yolo26_seg_lib-dbf6b6ba94520b903f5b.json",
+					"name" : "yolo26_seg_lib",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/workspace/ros2_ws/build/avs_perception",
+		"source" : "/workspace/ros2_ws/src/avs_perception"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

@@ -10,19 +10,27 @@ RUN apt-get update && apt-get install -y \
     git \
     pkg-config \
     libopencv-dev \
+    python3-opencv \
+    ros-humble-cv-bridge \
+    ros-humble-image-transport \
     libomp-dev \
     protobuf-compiler \
     libprotobuf-dev \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
+# Install python web server packages
+RUN pip3 install fastapi uvicorn websockets
+
+
 # Clone and build NCNN from source
 WORKDIR /tmp
-RUN git clone --depth 1 --branch 20240727 https://github.com/Tencent/ncnn.git && \
+RUN git clone --depth 1 --branch 20240820 https://github.com/Tencent/ncnn.git && \
     cd ncnn && \
     git submodule update --init && \
     mkdir build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/usr \
           -DNCNN_VULKAN=OFF \
           -DNCNN_BUILD_EXAMPLES=OFF \
           -DNCNN_BUILD_TOOLS=OFF \
