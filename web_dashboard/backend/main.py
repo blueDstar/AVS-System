@@ -334,10 +334,22 @@ async def change_mode(mode: str = Query(..., description="Run mode: 'camera' or 
         return {"status": "error", "message": "Video publisher parameter service not online"}
 
     req = SetParameters.Request()
-    req.parameters = [
+    params_list = [
         Parameter(name="video_path", value=ParameterValue(type=ParameterType.PARAMETER_STRING, string_value=target_source))
     ]
     
+    # When switching to camera mode, also send V4L2 capture settings
+    if mode == "camera":
+        cam_w = config.get("camera_width", 640)
+        cam_h = config.get("camera_height", 480)
+        cam_fps = config.get("camera_fps", 30)
+        params_list.extend([
+            Parameter(name="camera_width", value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=cam_w)),
+            Parameter(name="camera_height", value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=cam_h)),
+            Parameter(name="camera_fps", value=ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=cam_fps)),
+        ])
+
+    req.parameters = params_list
     bridge_node.pub_param_client.call_async(req)
     save_config({"mode": mode})
     logger.info(f"Requested mode change to: {mode} (source: {target_source})")
