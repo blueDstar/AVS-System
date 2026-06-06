@@ -9,13 +9,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(OpenCV REQUIRED)
 
-# Check for local NCNN build inside workspace
+# Check for local NCNN build inside workspace or system paths
 if(EXISTS "/home/goln/SimpleSysIDV/ncnn/lib/cmake/ncnn")
   set(ncnn_DIR "/home/goln/SimpleSysIDV/ncnn/lib/cmake/ncnn")
+elseif(EXISTS "/usr/lib/cmake/ncnn")
+  set(ncnn_DIR "/usr/lib/cmake/ncnn")
+elseif(EXISTS "/usr/local/lib/cmake/ncnn")
+  set(ncnn_DIR "/usr/local/lib/cmake/ncnn")
 endif()
 find_package(ncnn REQUIRED)
 
@@ -47,6 +52,7 @@ target_link_libraries(ncnn_inference_node yolo26_seg_lib)
 ament_target_dependencies(ncnn_inference_node
   rclcpp
   sensor_msgs
+  std_msgs
   cv_bridge
   image_transport
 )
@@ -60,11 +66,21 @@ ament_target_dependencies(video_test_node
   cv_bridge
 )
 
+# Create video publisher node for simulation
+add_executable(video_publisher_node src/video_publisher_node.cpp)
+target_link_libraries(video_publisher_node ${OpenCV_LIBRARIES})
+ament_target_dependencies(video_publisher_node
+  rclcpp
+  sensor_msgs
+  cv_bridge
+)
+
 # Install rules
 install(TARGETS
   yolo26_seg_lib
   ncnn_inference_node
   video_test_node
+  video_publisher_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

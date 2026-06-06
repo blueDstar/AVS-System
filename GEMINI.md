@@ -32,7 +32,7 @@ To ensure system stability and maintainability, the following guidelines are enf
 - **Deployment Skills:** Performance-driven Docker orchestration (See `skills/docker_SKILL/SKILL.md`).
 - **Coding Standards:** Surgical changes and simplicity-first approach based on Karpathy Guidelines (See `skills/karpathy-guidelines/SKILL.md`).
 - **Communication Skill:** Distributed ROS2 setup for Pi-to-Laptop streaming (See `skills/data_transport_SKILL/SKILL.md`).
-- **UI Standard:** Remote monitoring via Foxglove Studio on Acer Nitro 5.
+- **UI Standard:** Web dashboard UI/UX running on localhost via Firefox browser (optimized for Firefox).
 - **CPU-Centric Design:** Minimize overhead by keeping the entire vision pipeline (decode, resize, normalize, inference) on the CPU. Do not offload preprocessing to the GPU to avoid API call latency and CPU-GPU memory copy overhead.
 
 ## 5. Vision & Perception Logic

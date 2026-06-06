@@ -1,8 +1,8 @@
-# Install script for directory: /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception
+# Install script for directory: /workspace/ros2_ws/src/avs_perception
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/goln/SimpleSysIDV/ros2_ws/install/avs_perception")
+  set(CMAKE_INSTALL_PREFIX "/workspace/ros2_ws/install/avs_perception")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -43,7 +43,7 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  include("/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_symlink_install/ament_cmake_symlink_install.cmake")
+  include("/workspace/ros2_ws/build/avs_perception/ament_cmake_symlink_install/ament_cmake_symlink_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -54,5 +54,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/workspace/ros2_ws/build/avs_perception/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

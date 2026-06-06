@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/include -I/home/goln/SimpleSysIDV/ncnn/include -isystem /usr/include/opencv4 -isystem /home/goln/SimpleSysIDV/ncnn/include/ncnn
+CXX_INCLUDES = -I/workspace/ros2_ws/src/avs_perception/include -I/home/goln/SimpleSysIDV/ncnn/include -isystem /usr/include/opencv4 -isystem /usr/include/ncnn
 
 CXX_FLAGS = -fPIC -fopenmp -std=gnu++17
 

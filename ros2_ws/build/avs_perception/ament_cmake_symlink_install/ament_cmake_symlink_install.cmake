@@ -23,7 +23,7 @@ function(ament_cmake_symlink_install_directory cmake_current_source_dir)
 
   # make destination absolute path and ensure that it exists
   if(NOT IS_ABSOLUTE "${ARG_DESTINATION}")
-    set(ARG_DESTINATION "/home/goln/SimpleSysIDV/ros2_ws/install/avs_perception/${ARG_DESTINATION}")
+    set(ARG_DESTINATION "/workspace/ros2_ws/install/avs_perception/${ARG_DESTINATION}")
   endif()
   if(NOT EXISTS "${ARG_DESTINATION}")
     file(MAKE_DIRECTORY "${ARG_DESTINATION}")
@@ -128,7 +128,7 @@ function(ament_cmake_symlink_install_files cmake_current_source_dir)
 
   # make destination an absolute path and ensure that it exists
   if(NOT IS_ABSOLUTE "${ARG_DESTINATION}")
-    set(ARG_DESTINATION "/home/goln/SimpleSysIDV/ros2_ws/install/avs_perception/${ARG_DESTINATION}")
+    set(ARG_DESTINATION "/workspace/ros2_ws/install/avs_perception/${ARG_DESTINATION}")
   endif()
   if(NOT EXISTS "${ARG_DESTINATION}")
     file(MAKE_DIRECTORY "${ARG_DESTINATION}")
@@ -186,7 +186,7 @@ function(ament_cmake_symlink_install_programs cmake_current_source_dir)
 
   # make destination an absolute path and ensure that it exists
   if(NOT IS_ABSOLUTE "${ARG_DESTINATION}")
-    set(ARG_DESTINATION "/home/goln/SimpleSysIDV/ros2_ws/install/avs_perception/${ARG_DESTINATION}")
+    set(ARG_DESTINATION "/workspace/ros2_ws/install/avs_perception/${ARG_DESTINATION}")
   endif()
   if(NOT EXISTS "${ARG_DESTINATION}")
     file(MAKE_DIRECTORY "${ARG_DESTINATION}")
@@ -256,7 +256,7 @@ function(ament_cmake_symlink_install_targets)
 
     # make destination an absolute path and ensure that it exists
     if(NOT IS_ABSOLUTE "${destination}")
-      set(destination "/home/goln/SimpleSysIDV/ros2_ws/install/avs_perception/${destination}")
+      set(destination "/workspace/ros2_ws/install/avs_perception/${destination}")
     endif()
     if(NOT EXISTS "${destination}")
       file(MAKE_DIRECTORY "${destination}")
@@ -315,50 +315,50 @@ message(STATUS "Execute custom install script")
 
 # begin of custom install code
 
-# install("TARGETS" "yolo26_seg_lib" "ncnn_inference_node" "video_test_node" "DESTINATION" "lib/avs_perception")
-include("/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_symlink_install_targets_0_${CMAKE_INSTALL_CONFIG_NAME}.cmake")
+# install("TARGETS" "yolo26_seg_lib" "ncnn_inference_node" "video_test_node" "video_publisher_node" "DESTINATION" "lib/avs_perception")
+include("/workspace/ros2_ws/build/avs_perception/ament_cmake_symlink_install_targets_0_${CMAKE_INSTALL_CONFIG_NAME}.cmake")
 
 # install(DIRECTORY "launch" "DESTINATION" "share/avs_perception")
-ament_cmake_symlink_install_directory("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" DIRECTORY "launch" "DESTINATION" "share/avs_perception")
+ament_cmake_symlink_install_directory("/workspace/ros2_ws/src/avs_perception" DIRECTORY "launch" "DESTINATION" "share/avs_perception")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/avs_perception" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/avs_perception" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/avs_perception" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/avs_perception" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/avs_perception" "DESTINATION" "share/ament_index/resource_index/parent_prefix_path")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/avs_perception" "DESTINATION" "share/ament_index/resource_index/parent_prefix_path")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/avs_perception" "DESTINATION" "share/ament_index/resource_index/parent_prefix_path")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/avs_perception" "DESTINATION" "share/ament_index/resource_index/parent_prefix_path")
 
 # install(FILES "/opt/ros/humble/share/ament_cmake_core/cmake/environment_hooks/environment/ament_prefix_path.sh" "DESTINATION" "share/avs_perception/environment")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/opt/ros/humble/share/ament_cmake_core/cmake/environment_hooks/environment/ament_prefix_path.sh" "DESTINATION" "share/avs_perception/environment")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/opt/ros/humble/share/ament_cmake_core/cmake/environment_hooks/environment/ament_prefix_path.sh" "DESTINATION" "share/avs_perception/environment")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/ament_prefix_path.dsv" "DESTINATION" "share/avs_perception/environment")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/ament_prefix_path.dsv" "DESTINATION" "share/avs_perception/environment")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/ament_prefix_path.dsv" "DESTINATION" "share/avs_perception/environment")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/ament_prefix_path.dsv" "DESTINATION" "share/avs_perception/environment")
 
 # install(FILES "/opt/ros/humble/share/ament_cmake_core/cmake/environment_hooks/environment/path.sh" "DESTINATION" "share/avs_perception/environment")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/opt/ros/humble/share/ament_cmake_core/cmake/environment_hooks/environment/path.sh" "DESTINATION" "share/avs_perception/environment")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/opt/ros/humble/share/ament_cmake_core/cmake/environment_hooks/environment/path.sh" "DESTINATION" "share/avs_perception/environment")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/path.dsv" "DESTINATION" "share/avs_perception/environment")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/path.dsv" "DESTINATION" "share/avs_perception/environment")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/path.dsv" "DESTINATION" "share/avs_perception/environment")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/path.dsv" "DESTINATION" "share/avs_perception/environment")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.bash" "DESTINATION" "share/avs_perception")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.bash" "DESTINATION" "share/avs_perception")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.bash" "DESTINATION" "share/avs_perception")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.bash" "DESTINATION" "share/avs_perception")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.sh" "DESTINATION" "share/avs_perception")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.sh" "DESTINATION" "share/avs_perception")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.sh" "DESTINATION" "share/avs_perception")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.sh" "DESTINATION" "share/avs_perception")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.zsh" "DESTINATION" "share/avs_perception")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.zsh" "DESTINATION" "share/avs_perception")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.zsh" "DESTINATION" "share/avs_perception")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.zsh" "DESTINATION" "share/avs_perception")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.dsv" "DESTINATION" "share/avs_perception")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.dsv" "DESTINATION" "share/avs_perception")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.dsv" "DESTINATION" "share/avs_perception")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/local_setup.dsv" "DESTINATION" "share/avs_perception")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/package.dsv" "DESTINATION" "share/avs_perception")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/package.dsv" "DESTINATION" "share/avs_perception")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/package.dsv" "DESTINATION" "share/avs_perception")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_environment_hooks/package.dsv" "DESTINATION" "share/avs_perception")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/packages/avs_perception" "DESTINATION" "share/ament_index/resource_index/packages")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/packages/avs_perception" "DESTINATION" "share/ament_index/resource_index/packages")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/packages/avs_perception" "DESTINATION" "share/ament_index/resource_index/packages")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_index/share/ament_index/resource_index/packages/avs_perception" "DESTINATION" "share/ament_index/resource_index/packages")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig.cmake" "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig-version.cmake" "DESTINATION" "share/avs_perception/cmake")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig.cmake" "/home/goln/SimpleSysIDV/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig-version.cmake" "DESTINATION" "share/avs_perception/cmake")
+# install(FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig.cmake" "/workspace/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig-version.cmake" "DESTINATION" "share/avs_perception/cmake")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig.cmake" "/workspace/ros2_ws/build/avs_perception/ament_cmake_core/avs_perceptionConfig-version.cmake" "DESTINATION" "share/avs_perception/cmake")
 
-# install(FILES "/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/package.xml" "DESTINATION" "share/avs_perception")
-ament_cmake_symlink_install_files("/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception" FILES "/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/package.xml" "DESTINATION" "share/avs_perception")
+# install(FILES "/workspace/ros2_ws/src/avs_perception/package.xml" "DESTINATION" "share/avs_perception")
+ament_cmake_symlink_install_files("/workspace/ros2_ws/src/avs_perception" FILES "/workspace/ros2_ws/src/avs_perception/package.xml" "DESTINATION" "share/avs_perception")

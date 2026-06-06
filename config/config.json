@@ -1,0 +1,9 @@
+{
+  "mode": "video",
+  "camera_device": "/dev/video_source",
+  "video_path": "/workspace/test/test_video/video_test3.mp4",
+  "prob_threshold": 0.25,
+  "nms_threshold": 0.45,
+  "loop": true,
+  "fps_override": 0.0
+}

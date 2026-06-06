@@ -1,5 +1,5 @@
 CMakeFiles/ncnn_inference_node.dir/src/ncnn_inference_node.cpp.o: \
- /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/ncnn_inference_node.cpp \
+ /workspace/ros2_ws/src/avs_perception/src/ncnn_inference_node.cpp \
  /usr/include/stdc-predef.h /usr/include/c++/11/memory \
  /usr/include/c++/11/bits/stl_algobase.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
@@ -630,6 +630,12 @@ CMakeFiles/ncnn_inference_node.dir/src/ncnn_inference_node.cpp.o: \
  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/compressed_image__builder.hpp \
  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/compressed_image__traits.hpp \
  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/compressed_image__type_support.hpp \
+ /opt/ros/humble/include/std_msgs/std_msgs/msg/string.hpp \
+ /opt/ros/humble/include/std_msgs/std_msgs/msg/detail/string__struct.hpp \
+ /opt/ros/humble/include/std_msgs/std_msgs/msg/detail/string__builder.hpp \
+ /opt/ros/humble/include/std_msgs/std_msgs/msg/detail/string__traits.hpp \
+ /opt/ros/humble/include/std_msgs/std_msgs/msg/detail/string__type_support.hpp \
+ /opt/ros/humble/include/std_msgs/std_msgs/msg/rosidl_generator_cpp__visibility_control.hpp \
  /opt/ros/humble/include/cv_bridge/cv_bridge/cv_bridge.h \
  /opt/ros/humble/include/sensor_msgs/sensor_msgs/image_encodings.hpp \
  /usr/include/opencv4/opencv2/core/core.hpp \
@@ -763,40 +769,10 @@ CMakeFiles/ncnn_inference_node.dir/src/ncnn_inference_node.cpp.o: \
  /usr/include/opencv4/opencv2/video.hpp \
  /usr/include/opencv4/opencv2/video/tracking.hpp \
  /usr/include/opencv4/opencv2/video/background_segm.hpp \
- /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/include/avs_perception/yolo26_seg.hpp \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/net.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/blob.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/mat.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/allocator.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/platform.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/ncnn_export.h \
- /usr/include/x86_64-linux-gnu/sys/stat.h \
- /usr/include/x86_64-linux-gnu/bits/stat.h \
- /usr/include/x86_64-linux-gnu/bits/struct_stat.h \
- /usr/include/x86_64-linux-gnu/bits/statx.h /usr/include/linux/stat.h \
- /usr/include/linux/types.h /usr/include/x86_64-linux-gnu/asm/types.h \
- /usr/include/asm-generic/types.h /usr/include/asm-generic/int-ll64.h \
- /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
- /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
- /usr/include/linux/stddef.h \
- /usr/include/x86_64-linux-gnu/asm/posix_types.h \
- /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
- /usr/include/asm-generic/posix_types.h \
- /usr/include/x86_64-linux-gnu/bits/statx-generic.h \
- /usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h \
- /usr/include/x86_64-linux-gnu/bits/types/struct_statx.h \
- /usr/include/x86_64-linux-gnu/sys/mman.h \
- /usr/include/x86_64-linux-gnu/bits/mman.h \
- /usr/include/x86_64-linux-gnu/bits/mman-map-flags-generic.h \
- /usr/include/x86_64-linux-gnu/bits/mman-linux.h \
- /usr/include/x86_64-linux-gnu/bits/mman-shared.h /usr/include/fcntl.h \
- /usr/include/x86_64-linux-gnu/bits/fcntl.h \
- /usr/include/x86_64-linux-gnu/bits/fcntl-linux.h \
- /usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h \
- /usr/include/linux/falloc.h /usr/include/c++/11/stack \
- /usr/include/c++/11/bits/stl_stack.h /usr/include/c++/11/fenv.h \
+ /workspace/ros2_ws/src/avs_perception/include/avs_perception/yolo26_seg.hpp \
+ /usr/include/ncnn/net.h /usr/include/ncnn/blob.h /usr/include/ncnn/mat.h \
+ /usr/include/ncnn/allocator.h /usr/include/ncnn/platform.h \
+ /usr/include/ncnn/ncnn_export.h /usr/include/c++/11/fenv.h \
  /usr/include/fenv.h /usr/include/x86_64-linux-gnu/bits/fenv.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/option.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/layer.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/modelbin.h \
- /home/goln/SimpleSysIDV/ncnn/include/ncnn/paramdict.h
+ /usr/include/ncnn/option.h /usr/include/ncnn/layer.h \
+ /usr/include/ncnn/modelbin.h /usr/include/ncnn/paramdict.h
