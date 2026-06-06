@@ -12,17 +12,21 @@
 #include "cv_bridge/cv_bridge.h"
 #include <opencv2/opencv.hpp>
 
-// Helper to check if string is a camera device path and return its index
-bool try_parse_camera_device(const std::string& path, int& camera_index) {
-    if (path.rfind("/dev/video", 0) != 0) {
+// Helper: check if path is a /dev/ device (camera)
+static bool is_device_path(const std::string& path) {
+    return (path.rfind("/dev/", 0) == 0);
+}
+
+// Helper: resolve symlink and extract camera index for V4L2
+static bool try_parse_camera_index(const std::string& path, int& camera_index) {
+    if (!is_device_path(path)) {
         return false;
     }
-    
+
     // Resolve symlinks if present
     char resolved_path[PATH_MAX];
     if (realpath(path.c_str(), resolved_path) != nullptr) {
         std::string resolved(resolved_path);
-        // Find trailing digits
         size_t last_non_digit = resolved.find_last_not_of("0123456789");
         if (last_non_digit != std::string::npos && last_non_digit < resolved.length() - 1) {
             std::string digit_str = resolved.substr(last_non_digit + 1);
@@ -44,49 +48,37 @@ public:
         this->declare_parameter<std::string>("video_path", "/workspace/test/test_video/video_test1.mp4");
         this->declare_parameter<std::string>("publish_topic", "/camera/image_raw");
         this->declare_parameter<bool>("loop", true);
-        this->declare_parameter<double>("fps_override", 0.0); // 0.0 means use video's native FPS
+        this->declare_parameter<double>("fps_override", 0.0); // 0.0 means use source native FPS
+
+        // Camera V4L2 capture parameters
+        this->declare_parameter<int>("camera_width", 640);
+        this->declare_parameter<int>("camera_height", 480);
+        this->declare_parameter<int>("camera_fps", 30);
 
         // Retrieve parameters
         std::string video_path = this->get_parameter("video_path").as_string();
         std::string publish_topic = this->get_parameter("publish_topic").as_string();
         loop_ = this->get_parameter("loop").as_bool();
         fps_override_ = this->get_parameter("fps_override").as_double();
+        cam_width_ = this->get_parameter("camera_width").as_int();
+        cam_height_ = this->get_parameter("camera_height").as_int();
+        cam_fps_ = this->get_parameter("camera_fps").as_int();
 
-        // Open video source (camera or file)
-        int camera_index = 0;
-        if (try_parse_camera_device(video_path, camera_index)) {
-            RCLCPP_INFO(this->get_logger(), "Opening camera device: %s (index: %d)", video_path.c_str(), camera_index);
-            cap_.open(camera_index, cv::CAP_V4L2);
-        } else {
-            RCLCPP_INFO(this->get_logger(), "Loading video file: %s", video_path.c_str());
-            cap_.open(video_path);
-        }
-
-        if (!cap_.isOpened()) {
+        // Open video source
+        if (!open_source(video_path)) {
             RCLCPP_ERROR(this->get_logger(), "Failed to open video source: %s", video_path.c_str());
             throw std::runtime_error("Could not open video source");
         }
 
-        // Get video properties
-        double native_fps = cap_.get(cv::CAP_PROP_FPS);
-        if (native_fps <= 0.0 || std::isnan(native_fps)) {
-            native_fps = 30.0;
-        }
-        double fps = (fps_override_ > 0.0) ? fps_override_ : native_fps;
-        int width = cap_.get(cv::CAP_PROP_FRAME_WIDTH);
-        int height = cap_.get(cv::CAP_PROP_FRAME_HEIGHT);
-
-        RCLCPP_INFO(this->get_logger(), "Video source loaded. Resolution: %dx%d. FPS: %.2f (native: %.2f)", 
-                    width, height, fps, native_fps);
+        // Determine publishing FPS
+        double pub_fps = determine_fps();
 
         // Create image publishers
-        image_pub = this->create_publisher<sensor_msgs::msg::Image>(publish_topic, 10);
+        image_pub_ = this->create_publisher<sensor_msgs::msg::Image>(publish_topic, 10);
         compressed_pub_ = this->create_publisher<sensor_msgs::msg::CompressedImage>(publish_topic + "/compressed", 10);
 
-        // Calculate timer period in milliseconds
-        auto period = std::chrono::milliseconds(static_cast<int>(1000.0 / fps));
-
         // Create timer
+        auto period = std::chrono::milliseconds(static_cast<int>(1000.0 / pub_fps));
         timer_ = this->create_wall_timer(
             period,
             std::bind(&VideoPublisherNode::timer_callback, this)
@@ -97,56 +89,135 @@ public:
             std::bind(&VideoPublisherNode::on_set_parameters, this, std::placeholders::_1)
         );
 
-        RCLCPP_INFO(this->get_logger(), "Publisher started. Publishing to topic: %s", publish_topic.c_str());
+        RCLCPP_INFO(this->get_logger(), "Publisher started. Publishing to topic: %s at %.1f FPS", publish_topic.c_str(), pub_fps);
     }
 
 private:
+    // Open a video file or camera device with proper V4L2 configuration
+    bool open_source(const std::string& path) {
+        cv::VideoCapture new_cap;
+
+        if (is_device_path(path)) {
+            // --- Camera device ---
+            // Resolve symlinks to get the real device path (e.g., /dev/video_source -> /dev/video0)
+            std::string resolved = path;
+            char resolved_buf[PATH_MAX];
+            if (realpath(path.c_str(), resolved_buf) != nullptr) {
+                resolved = std::string(resolved_buf);
+            }
+            RCLCPP_INFO(this->get_logger(), "Opening camera device: %s (resolved: %s) with V4L2", path.c_str(), resolved.c_str());
+            new_cap.open(resolved, cv::CAP_V4L2);
+
+            if (!new_cap.isOpened()) {
+                RCLCPP_ERROR(this->get_logger(), "V4L2 failed to open camera: %s", path.c_str());
+                return false;
+            }
+
+            // Force MJPEG pixel format for hardware-accelerated decoding
+            new_cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+            new_cap.set(cv::CAP_PROP_FRAME_WIDTH, cam_width_);
+            new_cap.set(cv::CAP_PROP_FRAME_HEIGHT, cam_height_);
+            new_cap.set(cv::CAP_PROP_FPS, cam_fps_);
+
+            // Log actual negotiated values
+            int actual_w = static_cast<int>(new_cap.get(cv::CAP_PROP_FRAME_WIDTH));
+            int actual_h = static_cast<int>(new_cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+            double actual_fps = new_cap.get(cv::CAP_PROP_FPS);
+            int fourcc = static_cast<int>(new_cap.get(cv::CAP_PROP_FOURCC));
+            char fourcc_str[5] = {
+                (char)(fourcc & 0xFF),
+                (char)((fourcc >> 8) & 0xFF),
+                (char)((fourcc >> 16) & 0xFF),
+                (char)((fourcc >> 24) & 0xFF),
+                '\0'
+            };
+
+            RCLCPP_INFO(this->get_logger(),
+                "Camera configured: %dx%d @ %.1f FPS, Format: %s (requested: %dx%d @ %d FPS MJPG)",
+                actual_w, actual_h, actual_fps, fourcc_str,
+                cam_width_, cam_height_, cam_fps_);
+
+            is_camera_source_ = true;
+        } else {
+            // --- Video file ---
+            RCLCPP_INFO(this->get_logger(), "Loading video file: %s", path.c_str());
+            new_cap.open(path);
+
+            if (!new_cap.isOpened()) {
+                RCLCPP_ERROR(this->get_logger(), "Failed to open video file: %s", path.c_str());
+                return false;
+            }
+
+            int w = static_cast<int>(new_cap.get(cv::CAP_PROP_FRAME_WIDTH));
+            int h = static_cast<int>(new_cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+            double fps = new_cap.get(cv::CAP_PROP_FPS);
+            RCLCPP_INFO(this->get_logger(), "Video loaded: %dx%d @ %.2f FPS", w, h, fps);
+
+            is_camera_source_ = false;
+        }
+
+        // Swap capture object
+        cap_.release();
+        cap_ = std::move(new_cap);
+        return true;
+    }
+
+    // Determine the FPS to use for the timer
+    double determine_fps() {
+        if (fps_override_ > 0.0) {
+            return fps_override_;
+        }
+        if (is_camera_source_) {
+            // Use the configured camera FPS (V4L2 FPS reporting can be unreliable)
+            return static_cast<double>(cam_fps_);
+        }
+        double native_fps = cap_.get(cv::CAP_PROP_FPS);
+        if (native_fps <= 0.0 || std::isnan(native_fps)) {
+            native_fps = 30.0;
+        }
+        return native_fps;
+    }
+
+    // Reset the publishing timer to match a new FPS
+    void reset_timer() {
+        double fps = determine_fps();
+        timer_->cancel();
+        auto period = std::chrono::milliseconds(static_cast<int>(1000.0 / fps));
+        timer_ = this->create_wall_timer(
+            period,
+            std::bind(&VideoPublisherNode::timer_callback, this)
+        );
+        RCLCPP_INFO(this->get_logger(), "Timer reset to %.1f FPS (period: %d ms)",
+                     fps, static_cast<int>(1000.0 / fps));
+    }
+
     rcl_interfaces::msg::SetParametersResult on_set_parameters(const std::vector<rclcpp::Parameter> &parameters) {
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
-        
+
         std::lock_guard<std::mutex> lock(cap_mutex_);
-        
+
         for (const auto &param : parameters) {
             if (param.get_name() == "video_path") {
                 std::string new_path = param.as_string();
-                cv::VideoCapture new_cap;
-                
-                int camera_index = 0;
-                if (try_parse_camera_device(new_path, camera_index)) {
-                    RCLCPP_INFO(this->get_logger(), "Opening camera device: %s (index: %d)", new_path.c_str(), camera_index);
-                    new_cap.open(camera_index, cv::CAP_V4L2);
-                } else {
-                    RCLCPP_INFO(this->get_logger(), "Loading video file: %s", new_path.c_str());
-                    new_cap.open(new_path);
-                }
 
-                if (new_cap.isOpened()) {
-                    cap_ = new_cap;
+                if (open_source(new_path)) {
                     RCLCPP_INFO(this->get_logger(), "Dynamically switched source to: %s", new_path.c_str());
-                    
-                    // Reset timer based on new video FPS if not overridden
-                    if (fps_override_ <= 0.0) {
-                        double native_fps = cap_.get(cv::CAP_PROP_FPS);
-                        if (native_fps <= 0.0 || std::isnan(native_fps)) {
-                            native_fps = 30.0;
-                        }
-                        timer_->cancel();
-                        auto period = std::chrono::milliseconds(static_cast<int>(1000.0 / native_fps));
-                        timer_ = this->create_wall_timer(
-                            period,
-                            std::bind(&VideoPublisherNode::timer_callback, this)
-                        );
-                        RCLCPP_INFO(this->get_logger(), "Adjusted timer interval to match new video native FPS: %.2f", native_fps);
-                    }
+                    reset_timer();
                 } else {
-                    RCLCPP_ERROR(this->get_logger(), "Failed to open new source: %s", new_path.c_str());
+                    RCLCPP_ERROR(this->get_logger(), "Failed to switch source to: %s. Keeping previous source.", new_path.c_str());
                     result.successful = false;
-                    result.reason = "Failed to open new source";
+                    result.reason = "Failed to open new source: " + new_path;
                 }
             } else if (param.get_name() == "loop") {
                 loop_ = param.as_bool();
                 RCLCPP_INFO(this->get_logger(), "Loop setting updated to: %s", loop_ ? "true" : "false");
+            } else if (param.get_name() == "camera_width") {
+                cam_width_ = param.as_int();
+            } else if (param.get_name() == "camera_height") {
+                cam_height_ = param.as_int();
+            } else if (param.get_name() == "camera_fps") {
+                cam_fps_ = param.as_int();
             }
         }
         return result;
@@ -154,19 +225,22 @@ private:
 
     void timer_callback() {
         std::lock_guard<std::mutex> lock(cap_mutex_);
-        
+
         cv::Mat frame;
         if (!cap_.read(frame)) {
-            if (loop_) {
+            if (!is_camera_source_ && loop_) {
                 RCLCPP_INFO(this->get_logger(), "Video end reached. Looping back to start.");
                 cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
                 if (!cap_.read(frame)) {
                     RCLCPP_ERROR(this->get_logger(), "Failed to read frame after resetting video!");
                     return;
                 }
-            } else {
+            } else if (!is_camera_source_) {
                 RCLCPP_INFO(this->get_logger(), "Video end reached. Stopping timer.");
                 timer_->cancel();
+                return;
+            } else {
+                // Camera frame drop - skip silently
                 return;
             }
         }
@@ -178,11 +252,11 @@ private:
         auto timestamp = this->now();
 
         // 1. Publish raw image (Image message)
-        if (image_pub->get_subscription_count() > 0) {
+        if (image_pub_->get_subscription_count() > 0) {
             auto msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
             msg->header.stamp = timestamp;
             msg->header.frame_id = "camera_frame";
-            image_pub->publish(*msg);
+            image_pub_->publish(*msg);
         }
 
         // 2. Publish compressed image (CompressedImage message - JPEG format)
@@ -201,9 +275,13 @@ private:
 
     cv::VideoCapture cap_;
     bool loop_;
+    bool is_camera_source_ = false;
     double fps_override_;
+    int cam_width_ = 640;
+    int cam_height_ = 480;
+    int cam_fps_ = 30;
     std::mutex cap_mutex_;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
     rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_pub_;
     rclcpp::TimerBase::SharedPtr timer_;
     OnSetParametersCallbackHandle::SharedPtr param_cb_handle_;

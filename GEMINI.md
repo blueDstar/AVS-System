@@ -20,10 +20,20 @@ A real-time autonomous vehicle vision system utilizing **ROS2 Humble**, **Docker
 - **Spec:** 11th Gen Intel i5-11400H, 16GB RAM, RTX 3050 (4GB VRAM).
 - **OS:** Ubuntu 22.04.5 LTS (GNOME 42.9).
 
-### Deployment Target (Edge)
+### Deployment Target (Edge) — Dual Raspberry Pi 5 Setup
+Two Raspberry Pi 5 units are used: one for development testing and one for production deployment.
+
+#### Test Unit (Development Testing)
 - **Model:** Raspberry Pi 5 (4GB RAM) + Active Cooler.
 - **Storage:** 64GB MicroSD (OS via Raspberry Pi Imager).
 - **Network:** Hostname: `goln-raspi5.local`, User: `goln-raspi5`.
+- **Camera:** HBV HD CAMERA (USB, Vendor: `0ac8`, Product: `0346`), V4L2 MJPEG 640x480 @ 30fps.
+- **Controllers:** ESP32 via **micro-ROS** for low-level actuation.
+
+#### Production Unit (Deployment)
+- **Model:** Raspberry Pi 5 (4GB RAM) + Active Cooler.
+- **Network:** Hostname: `raspi5.local`, User: `pi`.
+- **Camera:** High-speed USB camera (up to 120fps capable), V4L2 MJPEG.
 - **Controllers:** ESP32 via **micro-ROS** for low-level actuation.
 
 ## 4. Development & Operation Principles
