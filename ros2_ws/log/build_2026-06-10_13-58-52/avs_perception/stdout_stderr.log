@@ -43,7 +43,7 @@
 [ 25%] Building CXX object CMakeFiles/video_publisher_node.dir/src/video_publisher_node.cpp.o
 [ 37%] Linking CXX static library libyolo26_seg_lib.a
 [ 37%] Built target yolo26_seg_lib
-[ 50%] Building CXX object CMakeFiles/ncnn_inference_node.dir/src/ncnn_inference_node.cpp.o
+[ 62%] Building CXX object CMakeFiles/ncnn_inference_node.dir/src/ncnn_inference_node.cpp.o
 [ 62%] Building CXX object CMakeFiles/video_test_node.dir/src/video_test_node.cpp.o
 [ 75%] Linking CXX executable video_test_node
 [ 87%] Linking CXX executable video_publisher_node
