@@ -42,13 +42,15 @@ To ensure system stability and maintainability, the following guidelines are enf
 - **Deployment Skills:** Performance-driven Docker orchestration (See `skills/docker_SKILL/SKILL.md`).
 - **Coding Standards:** Surgical changes and simplicity-first approach based on Karpathy Guidelines (See `skills/karpathy-guidelines/SKILL.md`).
 - **Communication Skill:** Distributed ROS2 setup for Pi-to-Laptop streaming (See `skills/data_transport_SKILL/SKILL.md`).
+- **Labeling Guidelines:** Lane and marking annotation rules for stable control transitions (See `skills/labeling_SKILL/SKILL.md`).
 - **UI Standard:** Web dashboard UI/UX running on localhost via Firefox browser (optimized for Firefox).
 - **CPU-Centric Design:** Minimize overhead by keeping the entire vision pipeline (decode, resize, normalize, inference) on the CPU. Do not offload preprocessing to the GPU to avoid API call latency and CPU-GPU memory copy overhead.
 
 ## 5. Vision & Perception Logic
 ### Segmentation Classes:
-- **Lanes:** `main-lane` (ego), `other-lane` (adjacent).
-- **Markings:** `solid-white/yellow`, `dashed-white/yellow`.
+- **Lanes:** `main-lane` (ego), `other-lane` (adjacent), `turn-lane` (intersection turn).
+- **Markings:** `solid-white`, `solid-yellow`, `dashed-white`, `dashed-yellow`, `stop-line` (intersection stop line).
+- **Parking:** `parking-slot` (oriented parking slot).
 - **Objects:** `vehicle` (all detectable traffic).
 
 ### CPU Pipeline Optimization Strategy:
