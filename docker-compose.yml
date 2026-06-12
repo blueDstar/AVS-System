@@ -20,7 +20,7 @@ services:
       - ROS_DOMAIN_ID=0
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
-    command: bash -c "cd /workspace/ros2_ws && rm -rf build install log && colcon build --symlink-install && source install/setup.bash && ros2 run avs_perception ncnn_inference_node & ros2 run avs_perception ipm_transform_node"
+    command: bash -c "cd /workspace/ros2_ws && rm -rf build install log && colcon build --symlink-install && source install/setup.bash && (ros2 run avs_perception ncnn_inference_node & ros2 run avs_perception ipm_transform_node)"
 
   video_publisher:
     build:
