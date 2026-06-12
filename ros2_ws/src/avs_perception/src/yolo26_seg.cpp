@@ -51,7 +51,7 @@ int YOLO26Seg::detect(const cv::Mat& bgr, std::vector<Object>& objects, float pr
     }
 
     int num_anchors = out0.w; // 2100
-    int num_classes = 8;
+    int num_classes = 12;
     int feat_channels = 32;
 
     std::vector<Object> proposals;
@@ -88,7 +88,7 @@ int YOLO26Seg::detect(const cv::Mat& bgr, std::vector<Object>& objects, float pr
 
             obj.mask_feats.resize(feat_channels);
             for (int j = 0; j < feat_channels; j++) {
-                obj.mask_feats[j] = out0.row(12 + j)[i];
+                obj.mask_feats[j] = out0.row(4 + num_classes + j)[i];
             }
 
             proposals.push_back(obj);

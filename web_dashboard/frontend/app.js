@@ -228,6 +228,12 @@ function updateDashboard(data) {
         document.getElementById("count-solid-white").innerText = data.detections["solid-white"] || 0;
         document.getElementById("count-solid-yellow").innerText = data.detections["solid-yellow"] || 0;
         document.getElementById("count-dashed-white").innerText = data.detections["dashed-white"] || 0;
+        document.getElementById("count-dashed-yellow").innerText = data.detections["dashed-yellow"] || 0;
+        document.getElementById("count-double-solid-white").innerText = data.detections["double-solid-white"] || 0;
+        document.getElementById("count-parking-zone").innerText = data.detections["parking-zone"] || 0;
+        document.getElementById("count-start").innerText = data.detections["start"] || 0;
+        document.getElementById("count-stop-line").innerText = data.detections["stop-line"] || 0;
+        document.getElementById("count-turn-lane").innerText = data.detections["turn-lane"] || 0;
     }
 
     // Update Chart.js datasets

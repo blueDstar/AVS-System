@@ -186,21 +186,26 @@ async def startup_event():
 async def root():
     return RedirectResponse(url="/index.html")
 
-# Color palette for segmentation overlay (matching C++ color scheme)
+# Color palette for segmentation overlay (matching C++ color scheme - BGR format)
 CLASS_COLORS = [
     (255, 0, 0),     # dashed-white: Blue
-    (255, 127, 0),   # double-solid-white: Orange
-    (0, 255, 0),     # main-lane: Green (ego lane)
+    (0, 165, 255),   # dashed-yellow: Orange
+    (255, 127, 0),   # double-solid-white: Light Blue
+    (0, 255, 0),     # main-lane: Green
     (0, 0, 255),     # other-lane: Red
+    (128, 128, 128), # parking-zone: Gray
     (255, 255, 0),   # solid-white: Cyan
     (0, 255, 255),   # solid-yellow: Yellow
+    (0, 255, 127),   # start: Spring Green
+    (0, 0, 128),     # stop-line: Navy
     (127, 0, 255),   # turn-lane: Purple
     (255, 0, 255)    # vehicle: Magenta
 ]
 
 CLASS_NAMES = [
-    "dashed-white", "double-solid-white", "main-lane", "other-lane",
-    "solid-white", "solid-yellow", "turn-lane", "vehicle"
+    "dashed-white", "dashed-yellow", "double-solid-white", "main-lane",
+    "other-lane", "parking-zone", "solid-white", "solid-yellow",
+    "start", "stop-line", "turn-lane", "vehicle"
 ]
 
 # Live MJPEG Stream Endpoint with Real-Time Overlay Rendering

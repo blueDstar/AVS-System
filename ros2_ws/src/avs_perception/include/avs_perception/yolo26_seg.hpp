@@ -27,18 +27,23 @@ private:
     ncnn::Net net;
     int target_size = 320;
     std::vector<std::string> class_names = {
-        "dashed-white", "double-solid-white", "main-lane", "other-lane",
-        "solid-white", "solid-yellow", "turn-lane", "vehicle"
+        "dashed-white", "dashed-yellow", "double-solid-white", "main-lane",
+        "other-lane", "parking-zone", "solid-white", "solid-yellow",
+        "start", "stop-line", "turn-lane", "vehicle"
     };
 
-    // Color palette for segmentation overlay
+    // Color palette for segmentation overlay (BGR format)
     std::vector<cv::Scalar> class_colors = {
         cv::Scalar(255, 0, 0),     // dashed-white: Blue
-        cv::Scalar(255, 127, 0),   // double-solid-white: Orange
-        cv::Scalar(0, 255, 0),     // main-lane: Green (ego lane)
+        cv::Scalar(0, 165, 255),   // dashed-yellow: Orange
+        cv::Scalar(255, 127, 0),   // double-solid-white: Light Blue
+        cv::Scalar(0, 255, 0),     // main-lane: Green
         cv::Scalar(0, 0, 255),     // other-lane: Red
+        cv::Scalar(128, 128, 128), // parking-zone: Gray
         cv::Scalar(255, 255, 0),   // solid-white: Cyan
         cv::Scalar(0, 255, 255),   // solid-yellow: Yellow
+        cv::Scalar(0, 255, 127),   // start: Spring Green
+        cv::Scalar(0, 0, 128),     // stop-line: Navy
         cv::Scalar(127, 0, 255),   // turn-lane: Purple
         cv::Scalar(255, 0, 255)    // vehicle: Magenta
     };

@@ -89,8 +89,9 @@ private:
 
         // Publish JSON telemetry
         const std::vector<std::string> class_names = {
-            "dashed-white", "double-solid-white", "main-lane", "other-lane",
-            "solid-white", "solid-yellow", "turn-lane", "vehicle"
+            "dashed-white", "dashed-yellow", "double-solid-white", "main-lane",
+            "other-lane", "parking-zone", "solid-white", "solid-yellow",
+            "start", "stop-line", "turn-lane", "vehicle"
         };
 
         std::string json_str = "{";

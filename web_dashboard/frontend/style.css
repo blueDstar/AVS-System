@@ -20,12 +20,18 @@
     --warning: #ffbf00;
     
     /* Detection Class Colors */
+    --color-dashed-white: #3366ff;
+    --color-dashed-yellow: #ff9900;
+    --color-double-solid-white: #0077ff;
     --color-ego-lane: #00ff66;
     --color-other-lane: #ff3333;
-    --color-vehicle: #ff00ff;
+    --color-parking-zone: #808080;
     --color-solid-white: #00f2fe;
     --color-solid-yellow: #ffff00;
-    --color-dashed-white: #3366ff;
+    --color-start: #00ff7f;
+    --color-stop-line: #800000;
+    --color-turn-lane: #aa00ff;
+    --color-vehicle: #ff00ff;
 }
 
 /* Global Reset & Typography */
@@ -563,12 +569,18 @@ body {
     border-radius: 50%;
 }
 
+.class-dot.dashed-white { background-color: var(--color-dashed-white); box-shadow: 0 0 6px var(--color-dashed-white); }
+.class-dot.dashed-yellow { background-color: var(--color-dashed-yellow); box-shadow: 0 0 6px var(--color-dashed-yellow); }
+.class-dot.double-solid-white { background-color: var(--color-double-solid-white); box-shadow: 0 0 6px var(--color-double-solid-white); }
 .class-dot.ego-lane { background-color: var(--color-ego-lane); box-shadow: 0 0 6px var(--color-ego-lane); }
 .class-dot.other-lane { background-color: var(--color-other-lane); box-shadow: 0 0 6px var(--color-other-lane); }
-.class-dot.vehicle { background-color: var(--color-vehicle); box-shadow: 0 0 6px var(--color-vehicle); }
+.class-dot.parking-zone { background-color: var(--color-parking-zone); box-shadow: 0 0 6px var(--color-parking-zone); }
 .class-dot.solid-white { background-color: var(--color-solid-white); box-shadow: 0 0 6px var(--color-solid-white); }
 .class-dot.solid-yellow { background-color: var(--color-solid-yellow); box-shadow: 0 0 6px var(--color-solid-yellow); }
-.class-dot.dashed-white { background-color: var(--color-dashed-white); box-shadow: 0 0 6px var(--color-dashed-white); }
+.class-dot.start { background-color: var(--color-start); box-shadow: 0 0 6px var(--color-start); }
+.class-dot.stop-line { background-color: var(--color-stop-line); box-shadow: 0 0 6px var(--color-stop-line); }
+.class-dot.turn-lane { background-color: var(--color-turn-lane); box-shadow: 0 0 6px var(--color-turn-lane); }
+.class-dot.vehicle { background-color: var(--color-vehicle); box-shadow: 0 0 6px var(--color-vehicle); }
 
 .detection-count {
     background: rgba(255, 255, 255, 0.05);
