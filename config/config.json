@@ -1,6 +1,6 @@
 {
   "mode": "video",
-  "camera_device": "/dev/video_source",
+  "camera_device": "/dev/video0",
   "video_path": "/workspace/test/test_video/video_test1.mp4",
   "prob_threshold": 0.25,
   "nms_threshold": 0.45,
