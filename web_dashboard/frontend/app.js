@@ -7,13 +7,23 @@ const labelsHistory = [];
 
 // Initialize Dashboard when DOM loads
 document.addEventListener("DOMContentLoaded", () => {
-    initChart();
-    setupWebSocket();
-    loadSystemConfig();
-    setupControlListeners();
-    checkStreamActive();
-    initViewToggle();
-    initCalibration();
+    const initSteps = [
+        { name: "initChart", fn: initChart },
+        { name: "setupWebSocket", fn: setupWebSocket },
+        { name: "loadSystemConfig", fn: loadSystemConfig },
+        { name: "setupControlListeners", fn: setupControlListeners },
+        { name: "checkStreamActive", fn: checkStreamActive },
+        { name: "initViewToggle", fn: initViewToggle },
+        { name: "initCalibration", fn: initCalibration }
+    ];
+
+    initSteps.forEach(step => {
+        try {
+            step.fn();
+        } catch (e) {
+            console.error(`Initialization step failed: ${step.name}`, e);
+        }
+    });
 });
 
 // Load startup config from backend
@@ -67,7 +77,15 @@ function toggleVideoSourceGroup(mode) {
 
 // Setup Chart.js
 function initChart() {
-    const ctx = document.getElementById('performance-chart').getContext('2d');
+    const canvas = document.getElementById('performance-chart');
+    if (!canvas) return;
+
+    if (typeof Chart === 'undefined') {
+        console.warn("Chart.js is not loaded. Skipping chart initialization.");
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
     
     // Fill empty history
     for (let i = 0; i < MAX_CHART_POINTS; i++) {
