@@ -1,0 +1,190 @@
+[0.000000] (-) TimerEvent: {}
+[0.000163] (avs_perception) JobQueued: {'identifier': 'avs_perception', 'dependencies': OrderedDict()}
+[0.000184] (avs_perception) JobStarted: {'identifier': 'avs_perception'}
+[0.027523] (avs_perception) JobProgress: {'identifier': 'avs_perception', 'progress': 'cmake'}
+[0.031756] (avs_perception) Command: {'cmd': ['/usr/bin/cmake', '/workspace/ros2_ws/src/avs_perception', '-DAMENT_CMAKE_SYMLINK_INSTALL=1', '-DCMAKE_INSTALL_PREFIX=/workspace/ros2_ws/install/avs_perception'], 'cwd': '/workspace/ros2_ws/build/avs_perception', 'env': OrderedDict([('HOSTNAME', 'goln-Nitro-AN515-57'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/root'), ('OLDPWD', '/workspace'), ('ROS_PYTHON_VERSION', '3'), ('ROS_DISTRO', 'humble'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('ROS_LOCALHOST_ONLY', '0'), ('QT_X11_NO_MITSHM', '1'), ('PATH', '/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'), ('DISPLAY', ':0'), ('LANG', 'C.UTF-8'), ('ROS_DOMAIN_ID', '0'), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('DEBIAN_FRONTEND', 'noninteractive'), ('PWD', '/workspace/ros2_ws/build/avs_perception'), ('LC_ALL', 'C.UTF-8'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[0.099759] (-) TimerEvent: {}
+[0.199923] (-) TimerEvent: {}
+[0.300087] (-) TimerEvent: {}
+[0.400272] (-) TimerEvent: {}
+[0.433245] (avs_perception) StdoutLine: {'line': b'-- The C compiler identification is GNU 11.4.0\n'}
+[0.500380] (-) TimerEvent: {}
+[0.580909] (avs_perception) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 11.4.0\n'}
+[0.593306] (avs_perception) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[0.600470] (-) TimerEvent: {}
+[0.655681] (avs_perception) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[0.660541] (avs_perception) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[0.660983] (avs_perception) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[0.661530] (avs_perception) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[0.664414] (avs_perception) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[0.700584] (-) TimerEvent: {}
+[0.719507] (avs_perception) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[0.724609] (avs_perception) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[0.724698] (avs_perception) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[0.724916] (avs_perception) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[0.727369] (avs_perception) StdoutLine: {'line': b'-- Found ament_cmake: 1.3.14 (/opt/ros/humble/share/ament_cmake/cmake)\n'}
+[0.800684] (-) TimerEvent: {}
+[0.814006] (avs_perception) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter \n'}
+[0.864586] (avs_perception) StdoutLine: {'line': b'-- Override CMake install command with custom implementation using symlinks instead of copying resources\n'}
+[0.900799] (-) TimerEvent: {}
+[0.911703] (avs_perception) StdoutLine: {'line': b'-- Found rclcpp: 16.0.19 (/opt/ros/humble/share/rclcpp/cmake)\n'}
+[0.966490] (avs_perception) StdoutLine: {'line': b'-- Found rosidl_generator_c: 3.1.8 (/opt/ros/humble/share/rosidl_generator_c/cmake)\n'}
+[0.970659] (avs_perception) StdoutLine: {'line': b'-- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)\n'}
+[0.982456] (avs_perception) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 3.1.8 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)\n'}
+[0.995323] (avs_perception) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[1.000866] (-) TimerEvent: {}
+[1.012702] (avs_perception) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[1.054777] (avs_perception) StdoutLine: {'line': b'-- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)\n'}
+[1.057193] (avs_perception) StdoutLine: {'line': b'-- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)\n'}
+[1.100959] (-) TimerEvent: {}
+[1.127974] (avs_perception) StdoutLine: {'line': b'-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  \n'}
+[1.142563] (avs_perception) StdoutLine: {'line': b'-- Found FastRTPS: /opt/ros/humble/include  \n'}
+[1.166113] (avs_perception) StdoutLine: {'line': b"-- Using RMW implementation 'rmw_fastrtps_cpp' as default\n"}
+[1.176998] (avs_perception) StdoutLine: {'line': b'-- Looking for pthread.h\n'}
+[1.201049] (-) TimerEvent: {}
+[1.250063] (avs_perception) StdoutLine: {'line': b'-- Looking for pthread.h - found\n'}
+[1.250284] (avs_perception) StdoutLine: {'line': b'-- Performing Test CMAKE_HAVE_LIBC_PTHREAD\n'}
+[1.299482] (avs_perception) StdoutLine: {'line': b'-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success\n'}
+[1.300630] (avs_perception) StdoutLine: {'line': b'-- Found Threads: TRUE  \n'}
+[1.301097] (-) TimerEvent: {}
+[1.350450] (avs_perception) StdoutLine: {'line': b'-- Found sensor_msgs: 4.9.1 (/opt/ros/humble/share/sensor_msgs/cmake)\n'}
+[1.378731] (avs_perception) StdoutLine: {'line': b'-- Found cv_bridge: 3.2.1 (/opt/ros/humble/share/cv_bridge/cmake)\n'}
+[1.399585] (avs_perception) StdoutLine: {'line': b'-- Found image_transport: 3.1.12 (/opt/ros/humble/share/image_transport/cmake)\n'}
+[1.401179] (-) TimerEvent: {}
+[1.442626] (avs_perception) StdoutLine: {'line': b'-- Found OpenCV: /usr (found version "4.5.4") \n'}
+[1.501310] (-) TimerEvent: {}
+[1.601493] (-) TimerEvent: {}
+[1.616650] (avs_perception) StdoutLine: {'line': b'-- Found OpenMP_C: -fopenmp (found version "4.5") \n'}
+[1.671408] (avs_perception) StdoutLine: {'line': b'-- Found OpenMP_CXX: -fopenmp (found version "4.5") \n'}
+[1.671604] (avs_perception) StdoutLine: {'line': b'-- Found OpenMP: TRUE (found version "4.5")  \n'}
+[1.701592] (-) TimerEvent: {}
+[1.719973] (avs_perception) StdoutLine: {'line': b'-- Configuring done\n'}
+[1.736619] (avs_perception) StdoutLine: {'line': b'-- Generating done\n'}
+[1.742070] (avs_perception) StdoutLine: {'line': b'-- Build files have been written to: /workspace/ros2_ws/build/avs_perception\n'}
+[1.748451] (avs_perception) CommandEnded: {'returncode': 0}
+[1.749581] (avs_perception) JobProgress: {'identifier': 'avs_perception', 'progress': 'build'}
+[1.749677] (avs_perception) Command: {'cmd': ['/usr/bin/cmake', '--build', '/workspace/ros2_ws/build/avs_perception', '--', '-j12', '-l12'], 'cwd': '/workspace/ros2_ws/build/avs_perception', 'env': OrderedDict([('HOSTNAME', 'goln-Nitro-AN515-57'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/root'), ('OLDPWD', '/workspace'), ('ROS_PYTHON_VERSION', '3'), ('ROS_DISTRO', 'humble'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('ROS_LOCALHOST_ONLY', '0'), ('QT_X11_NO_MITSHM', '1'), ('PATH', '/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'), ('DISPLAY', ':0'), ('LANG', 'C.UTF-8'), ('ROS_DOMAIN_ID', '0'), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('DEBIAN_FRONTEND', 'noninteractive'), ('PWD', '/workspace/ros2_ws/build/avs_perception'), ('LC_ALL', 'C.UTF-8'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[1.779658] (avs_perception) StdoutLine: {'line': b'[ 25%] Building CXX object CMakeFiles/yolo26_seg_lib.dir/src/yolo26_seg.cpp.o\n'}
+[1.779799] (avs_perception) StdoutLine: {'line': b'[ 25%] Building CXX object CMakeFiles/video_publisher_node.dir/src/video_publisher_node.cpp.o\n'}
+[1.801733] (-) TimerEvent: {}
+[1.901898] (-) TimerEvent: {}
+[2.002065] (-) TimerEvent: {}
+[2.102260] (-) TimerEvent: {}
+[2.202461] (-) TimerEvent: {}
+[2.302751] (-) TimerEvent: {}
+[2.403022] (-) TimerEvent: {}
+[2.503262] (-) TimerEvent: {}
+[2.603512] (-) TimerEvent: {}
+[2.703751] (-) TimerEvent: {}
+[2.804002] (-) TimerEvent: {}
+[2.904251] (-) TimerEvent: {}
+[3.004454] (-) TimerEvent: {}
+[3.104681] (-) TimerEvent: {}
+[3.113440] (avs_perception) StdoutLine: {'line': b'[ 37%] Linking CXX static library libyolo26_seg_lib.a\n'}
+[3.137196] (avs_perception) StdoutLine: {'line': b'[ 37%] Built target yolo26_seg_lib\n'}
+[3.150453] (avs_perception) StdoutLine: {'line': b'[ 62%] Building CXX object CMakeFiles/ncnn_inference_node.dir/src/ncnn_inference_node.cpp.o\n'}
+[3.150587] (avs_perception) StdoutLine: {'line': b'[ 62%] Building CXX object CMakeFiles/video_test_node.dir/src/video_test_node.cpp.o\n'}
+[3.204806] (-) TimerEvent: {}
+[3.305017] (-) TimerEvent: {}
+[3.405194] (-) TimerEvent: {}
+[3.505389] (-) TimerEvent: {}
+[3.605573] (-) TimerEvent: {}
+[3.705737] (-) TimerEvent: {}
+[3.805898] (-) TimerEvent: {}
+[3.906079] (-) TimerEvent: {}
+[4.006257] (-) TimerEvent: {}
+[4.106457] (-) TimerEvent: {}
+[4.206654] (-) TimerEvent: {}
+[4.306912] (-) TimerEvent: {}
+[4.407095] (-) TimerEvent: {}
+[4.507298] (-) TimerEvent: {}
+[4.607501] (-) TimerEvent: {}
+[4.707699] (-) TimerEvent: {}
+[4.807941] (-) TimerEvent: {}
+[4.908151] (-) TimerEvent: {}
+[5.008353] (-) TimerEvent: {}
+[5.108550] (-) TimerEvent: {}
+[5.208752] (-) TimerEvent: {}
+[5.308951] (-) TimerEvent: {}
+[5.409133] (-) TimerEvent: {}
+[5.509316] (-) TimerEvent: {}
+[5.609457] (-) TimerEvent: {}
+[5.709606] (-) TimerEvent: {}
+[5.809787] (-) TimerEvent: {}
+[5.909943] (-) TimerEvent: {}
+[5.982756] (avs_perception) StdoutLine: {'line': b'[ 75%] Linking CXX executable video_test_node\n'}
+[6.010037] (-) TimerEvent: {}
+[6.110233] (-) TimerEvent: {}
+[6.210446] (-) TimerEvent: {}
+[6.310637] (-) TimerEvent: {}
+[6.349161] (avs_perception) StdoutLine: {'line': b'[ 87%] Linking CXX executable video_publisher_node\n'}
+[6.372316] (avs_perception) StdoutLine: {'line': b'[ 87%] Built target video_test_node\n'}
+[6.410727] (-) TimerEvent: {}
+[6.510829] (-) TimerEvent: {}
+[6.610971] (-) TimerEvent: {}
+[6.710070] (avs_perception) StdoutLine: {'line': b'[ 87%] Built target video_publisher_node\n'}
+[6.711028] (-) TimerEvent: {}
+[6.811231] (-) TimerEvent: {}
+[6.911427] (-) TimerEvent: {}
+[7.011658] (-) TimerEvent: {}
+[7.111891] (-) TimerEvent: {}
+[7.212079] (-) TimerEvent: {}
+[7.312255] (-) TimerEvent: {}
+[7.412507] (-) TimerEvent: {}
+[7.512738] (-) TimerEvent: {}
+[7.612984] (-) TimerEvent: {}
+[7.713147] (-) TimerEvent: {}
+[7.813377] (-) TimerEvent: {}
+[7.913597] (-) TimerEvent: {}
+[8.013762] (-) TimerEvent: {}
+[8.113915] (-) TimerEvent: {}
+[8.214084] (-) TimerEvent: {}
+[8.314297] (-) TimerEvent: {}
+[8.414525] (-) TimerEvent: {}
+[8.514762] (-) TimerEvent: {}
+[8.614940] (-) TimerEvent: {}
+[8.715111] (-) TimerEvent: {}
+[8.815337] (-) TimerEvent: {}
+[8.915530] (-) TimerEvent: {}
+[9.015763] (-) TimerEvent: {}
+[9.115992] (-) TimerEvent: {}
+[9.216188] (-) TimerEvent: {}
+[9.316410] (-) TimerEvent: {}
+[9.416601] (-) TimerEvent: {}
+[9.516850] (-) TimerEvent: {}
+[9.597162] (avs_perception) StdoutLine: {'line': b'[100%] Linking CXX executable ncnn_inference_node\n'}
+[9.616950] (-) TimerEvent: {}
+[9.717193] (-) TimerEvent: {}
+[9.817387] (-) TimerEvent: {}
+[9.917576] (-) TimerEvent: {}
+[10.017753] (-) TimerEvent: {}
+[10.056931] (avs_perception) StdoutLine: {'line': b'[100%] Built target ncnn_inference_node\n'}
+[10.063547] (avs_perception) CommandEnded: {'returncode': 0}
+[10.063990] (avs_perception) JobProgress: {'identifier': 'avs_perception', 'progress': 'install'}
+[10.069657] (avs_perception) Command: {'cmd': ['/usr/bin/cmake', '--install', '/workspace/ros2_ws/build/avs_perception'], 'cwd': '/workspace/ros2_ws/build/avs_perception', 'env': OrderedDict([('HOSTNAME', 'goln-Nitro-AN515-57'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/root'), ('OLDPWD', '/workspace'), ('ROS_PYTHON_VERSION', '3'), ('ROS_DISTRO', 'humble'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('ROS_LOCALHOST_ONLY', '0'), ('QT_X11_NO_MITSHM', '1'), ('PATH', '/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'), ('DISPLAY', ':0'), ('LANG', 'C.UTF-8'), ('ROS_DOMAIN_ID', '0'), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('DEBIAN_FRONTEND', 'noninteractive'), ('PWD', '/workspace/ros2_ws/build/avs_perception'), ('LC_ALL', 'C.UTF-8'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[10.074090] (avs_perception) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[10.074314] (avs_perception) StdoutLine: {'line': b'-- Execute custom install script\n'}
+[10.074539] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/lib/avs_perception/libyolo26_seg_lib.a\n'}
+[10.079669] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/lib/avs_perception/ncnn_inference_node\n'}
+[10.084582] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_test_node\n'}
+[10.089525] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node\n'}
+[10.094570] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/launch/perception.launch.py\n'}
+[10.099612] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/ament_index/resource_index/package_run_dependencies/avs_perception\n'}
+[10.104629] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/ament_index/resource_index/parent_prefix_path/avs_perception\n'}
+[10.109366] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/environment/ament_prefix_path.sh\n'}
+[10.114058] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/environment/ament_prefix_path.dsv\n'}
+[10.117827] (-) TimerEvent: {}
+[10.118827] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/environment/path.sh\n'}
+[10.123556] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/environment/path.dsv\n'}
+[10.128355] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/local_setup.bash\n'}
+[10.133086] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/local_setup.sh\n'}
+[10.137912] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/local_setup.zsh\n'}
+[10.142619] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/local_setup.dsv\n'}
+[10.147537] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/package.dsv\n'}
+[10.152556] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/ament_index/resource_index/packages/avs_perception\n'}
+[10.157427] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/cmake/avs_perceptionConfig.cmake\n'}
+[10.162460] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/cmake/avs_perceptionConfig-version.cmake\n'}
+[10.168137] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /workspace/ros2_ws/install/avs_perception/share/avs_perception/package.xml\n'}
+[10.174608] (avs_perception) CommandEnded: {'returncode': 0}
+[10.191461] (avs_perception) JobEnded: {'identifier': 'avs_perception', 'rc': 0}
+[10.191760] (-) EventReactorShutdown: {}
