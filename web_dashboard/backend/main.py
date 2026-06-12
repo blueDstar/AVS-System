@@ -4,6 +4,7 @@ import logging
 import os
 import threading
 from typing import Set
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -31,6 +32,23 @@ latest_telemetry = {}
 connected_clients: Set[WebSocket] = set()
 loop = None
 bridge_node = None
+latest_homography_matrix = None
+
+def load_homography_on_startup():
+    global latest_homography_matrix
+    paths = ["/workspace/config/calibration.json", "config/calibration.json"]
+    for path in paths:
+        if os.path.exists(path):
+            try:
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                    latest_homography_matrix = np.array(data["homography_matrix"], dtype=np.float32)
+                    logger.info(f"Loaded homography matrix from {path} on startup.")
+                    return
+            except Exception as e:
+                logger.error(f"Error loading homography on startup from {path}: {e}")
+
+load_homography_on_startup()
 
 def load_config():
     paths = ["/workspace/config/config.json", "config/config.json"]
@@ -72,10 +90,10 @@ class WebBridgeNode(Node):
             10
         )
         
-        # Subscribe to telemetry JSON data
+        # Subscribe to telemetry JSON data (prefer realworld if available)
         self.telemetry_sub = self.create_subscription(
             String,
-            '/avs/telemetry',
+            '/avs/telemetry_realworld',
             self.telemetry_callback,
             10
         )
@@ -209,9 +227,9 @@ CLASS_NAMES = [
 ]
 
 # Live MJPEG Stream Endpoint with Real-Time Overlay Rendering
-async def frame_generator():
-    global latest_jpeg_frame, latest_telemetry
-    logger.info("MJPEG stream connection opened.")
+async def frame_generator(view: str = "normal"):
+    global latest_jpeg_frame, latest_telemetry, latest_homography_matrix
+    logger.info(f"MJPEG stream connection opened (view mode: {view}).")
     
     last_processed_frame = None
     
@@ -262,6 +280,23 @@ async def frame_generator():
                         # Blend the transparency mask overlay
                         cv2.addWeighted(overlay, 0.4, img, 0.6, 0, img)
                     
+                    # Apply Homography Warp if view mode is set to "ipm"
+                    if view == "ipm":
+                        if latest_homography_matrix is not None:
+                            W = 640
+                            Ho = 480
+                            # Map ground X [-1000, 1000] and Y [0, 3500] to pixel grid [0, W] and [Ho, 0]
+                            M = np.float32([
+                                [W / 2000.0, 0, W / 2.0],
+                                [0, -Ho / 3500.0, Ho],
+                                [0, 0, 1.0]
+                            ])
+                            H_warped = np.dot(M, latest_homography_matrix)
+                            img = cv2.warpPerspective(img, H_warped, (W, Ho))
+                        else:
+                            # Overlay warning text if not calibrated
+                            cv2.putText(img, "IPM Not Calibrated", (120, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
+
                     # Re-encode to JPEG
                     _, jpeg_bytes = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 80])
                     frame_data = jpeg_bytes.tobytes()
@@ -279,9 +314,9 @@ async def frame_generator():
         logger.error(f"Error in MJPEG stream: {e}")
 
 @app.get("/api/stream")
-async def get_stream():
+async def get_stream(view: str = "normal"):
     return StreamingResponse(
-        frame_generator(),
+        frame_generator(view),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
 
@@ -418,6 +453,75 @@ async def change_source(video_name: str = Query(..., description="Name of video 
     })
     logger.info(f"Requested video source change to: {video_path}")
     return {"status": "success", "video_path": video_path}
+
+# API to get current calibration
+@app.get("/api/calibration")
+async def get_calibration():
+    calib_path = "/workspace/config/calibration.json"
+    if not os.path.exists(calib_path):
+        calib_path = "config/calibration.json"
+    if os.path.exists(calib_path):
+        try:
+            with open(calib_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading calibration file: {e}")
+            return {"status": "error", "message": str(e)}
+    return {"status": "error", "message": "No calibration file found."}
+
+# API to save new calibration (calculates Homography matrix H)
+@app.post("/api/calibration")
+async def save_calibration(data: dict):
+    pixel_points = data.get("pixel_points")
+    world_points = data.get("world_points")
+    if not pixel_points or not world_points or len(pixel_points) != 4 or len(world_points) != 4:
+        return {"status": "error", "message": "Invalid points. Must provide exactly 4 pairs of pixel and world points."}
+    try:
+        src = np.float32(pixel_points)
+        dst = np.float32(world_points)
+        H = cv2.getPerspectiveTransform(src, dst)
+        
+        calib_data = {
+            "homography_matrix": H.tolist(),
+            "pixel_points": pixel_points,
+            "world_points": world_points,
+            "image_size": [640, 480],
+            "calibrated_at": datetime.now().isoformat()
+        }
+        
+        calib_path = "/workspace/config/calibration.json"
+        if not os.path.exists("/workspace/config"):
+            os.makedirs("config", exist_ok=True)
+            calib_path = "config/calibration.json"
+            
+        with open(calib_path, 'w') as f:
+            json.dump(calib_data, f, indent=2)
+            
+        logger.info(f"Saved calibration matrix H to {calib_path}")
+        
+        # Update dynamic homography matrix in memory for active streams
+        global latest_homography_matrix
+        latest_homography_matrix = H
+        
+        return {"status": "success", "homography_matrix": H.tolist()}
+    except Exception as e:
+        logger.error(f"Error computing homography matrix: {e}")
+        return {"status": "error", "message": str(e)}
+
+# API to get latest calibration snapshot image
+@app.get("/api/calibration/frame")
+async def get_calibration_frame():
+    global latest_jpeg_frame
+    if latest_jpeg_frame is not None:
+        from fastapi import Response
+        return Response(content=latest_jpeg_frame, media_type="image/jpeg")
+    else:
+        # Fallback black frame if stream not running
+        img = np.zeros((480, 640, 3), dtype=np.uint8)
+        cv2.putText(img, "No camera stream available", (120, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        _, jpeg_bytes = cv2.imencode('.jpg', img)
+        from fastapi import Response
+        return Response(content=jpeg_bytes.tobytes(), media_type="image/jpeg")
 
 # Mount static files (Frontend UI)
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")

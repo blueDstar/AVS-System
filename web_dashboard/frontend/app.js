@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSystemConfig();
     setupControlListeners();
     checkStreamActive();
+    initViewToggle();
+    initCalibration();
 });
 
 // Load startup config from backend
@@ -255,6 +257,7 @@ function updateDashboard(data) {
 
         perfChart.update('none'); // Update without full animation for performance
     }
+    drawBEV(data);
 }
 
 // Toggle Stream state UI indicators
@@ -381,13 +384,378 @@ function setupControlListeners() {
     });
 }
 
+let currentViewMode = "normal";
+
 // Periodically check if stream image is loading
 function checkStreamActive() {
     const streamImg = document.getElementById("mjpeg-stream");
     streamImg.onerror = () => {
         console.warn("MJPEG stream link failed or offline. Retrying stream reload...");
         setTimeout(() => {
-            streamImg.src = "/api/stream?t=" + new Date().getTime();
+            streamImg.src = `/api/stream?view=${currentViewMode}&t=` + new Date().getTime();
         }, 5000);
     };
+}
+
+function initViewToggle() {
+    const btnNormal = document.getElementById("btn-view-normal");
+    const btnIpm = document.getElementById("btn-view-ipm");
+    const streamImg = document.getElementById("mjpeg-stream");
+
+    if (!btnNormal || !btnIpm || !streamImg) return;
+
+    btnNormal.addEventListener("click", () => {
+        if (currentViewMode === "normal") return;
+        currentViewMode = "normal";
+        btnNormal.classList.add("active");
+        btnIpm.classList.remove("active");
+        streamImg.src = "/api/stream?view=normal";
+    });
+
+    btnIpm.addEventListener("click", () => {
+        if (currentViewMode === "ipm") return;
+        currentViewMode = "ipm";
+        btnIpm.classList.add("active");
+        btnNormal.classList.remove("active");
+        streamImg.src = "/api/stream?view=ipm";
+    });
+}
+
+// --- CALIBRATION & BEV INTEGRATION ---
+
+// Calibration State
+let calibrationPoints = []; // Stores up to 4 points: { u, v }
+let activeCalibration = null;
+const POINT_COLORS = ['#ff007f', '#00f2fe', '#ffff00', '#00ff66'];
+
+function initCalibration() {
+    const btnCalibrate = document.getElementById("btn-calibrate");
+    const modal = document.getElementById("calibration-modal");
+    const btnClose = document.getElementById("btn-close-calibration");
+    const canvas = document.getElementById("calibration-canvas");
+    const img = document.getElementById("calibration-img");
+    const btnSave = document.getElementById("btn-save-calibration");
+    const btnClear = document.getElementById("btn-clear-calibration");
+
+    if (!btnCalibrate || !modal) return;
+
+    // Open Modal
+    btnCalibrate.addEventListener("click", () => {
+        // Fetch snapshot frame
+        img.src = `/api/calibration/frame?t=${Date.now()}`;
+        modal.classList.remove("hidden");
+        calibrationPoints = [];
+        drawCalibrationPoints();
+        
+        // Fetch existing calibration to populate inputs
+        fetch('/api/calibration')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.status !== "error") {
+                    activeCalibration = data;
+                    document.getElementById("bev-status").innerText = "CALIBRATED";
+                    document.getElementById("bev-status").className = "badge success";
+                    
+                    // Pre-populate input fields
+                    if (data.world_points) {
+                        for (let i = 0; i < 4; i++) {
+                            if (data.world_points[i]) {
+                                document.getElementById(`p${i+1}-x`).value = data.world_points[i][0];
+                                document.getElementById(`p${i+1}-y`).value = data.world_points[i][1];
+                            }
+                        }
+                    }
+                    
+                    // Pre-populate pixel points
+                    if (data.pixel_points) {
+                        calibrationPoints = data.pixel_points.map(pt => ({ u: pt[0], v: pt[1] }));
+                        drawCalibrationPoints();
+                    }
+                }
+            })
+            .catch(err => console.warn("No active calibration loaded:", err));
+    });
+
+    // Close Modal
+    btnClose.addEventListener("click", () => {
+        modal.classList.add("hidden");
+    });
+
+    // Handle clicks on canvas
+    canvas.addEventListener("click", (e) => {
+        if (calibrationPoints.length >= 4) return;
+
+        const rect = canvas.getBoundingClientRect();
+        
+        // Target image size is 640x480, scale the click position
+        const u = Math.round((e.clientX - rect.left) * (640 / rect.width));
+        const v = Math.round((e.clientY - rect.top) * (480 / rect.height));
+
+        calibrationPoints.push({ u, v });
+        drawCalibrationPoints();
+    });
+
+    // Clear calibration points
+    btnClear.addEventListener("click", () => {
+        calibrationPoints = [];
+        drawCalibrationPoints();
+    });
+
+    // Save calibration API request
+    btnSave.addEventListener("click", () => {
+        if (calibrationPoints.length !== 4) {
+            alert("Please select exactly 4 points on the image first.");
+            return;
+        }
+
+        const worldPoints = [];
+        for (let i = 1; i <= 4; i++) {
+            const xVal = parseFloat(document.getElementById(`p${i}-x`).value);
+            const yVal = parseFloat(document.getElementById(`p${i}-y`).value);
+            if (isNaN(xVal) || isNaN(yVal)) {
+                alert(`Please enter valid X and Y coordinates for Point ${i}.`);
+                return;
+            }
+            worldPoints.push([xVal, yVal]);
+        }
+
+        const payload = {
+            pixel_points: calibrationPoints.map(pt => [pt.u, pt.v]),
+            world_points: worldPoints
+        };
+
+        btnSave.innerText = "Saving...";
+        btnSave.disabled = true;
+
+        fetch('/api/calibration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("Calibration saved successfully!");
+                activeCalibration = data;
+                document.getElementById("bev-status").innerText = "CALIBRATED";
+                document.getElementById("bev-status").className = "badge success";
+                modal.classList.add("hidden");
+            } else {
+                alert("Failed to save calibration: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Calibration error:", err);
+            alert("Error sending calibration data to server.");
+        })
+        .finally(() => {
+            btnSave.innerText = "Save Calibration";
+            btnSave.disabled = false;
+        });
+    });
+    
+    // Initial load of calibration status on startup
+    fetch('/api/calibration')
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.status !== "error") {
+                activeCalibration = data;
+                document.getElementById("bev-status").innerText = "CALIBRATED";
+                document.getElementById("bev-status").className = "badge success";
+                drawBEV(null); // Draw empty grid
+            }
+        })
+        .catch(() => {});
+}
+
+function drawCalibrationPoints() {
+    const canvas = document.getElementById("calibration-canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw lines connecting points if we have points
+    if (calibrationPoints.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(calibrationPoints[0].u, calibrationPoints[0].v);
+        for (let i = 1; i < calibrationPoints.length; i++) {
+            ctx.lineTo(calibrationPoints[i].u, calibrationPoints[i].v);
+        }
+        if (calibrationPoints.length === 4) {
+            ctx.closePath();
+            ctx.strokeStyle = "rgba(138, 75, 243, 0.6)";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.fillStyle = "rgba(138, 75, 243, 0.15)";
+            ctx.fill();
+        } else {
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    // Draw point markers
+    calibrationPoints.forEach((pt, idx) => {
+        const color = POINT_COLORS[idx];
+        
+        // Glow effect
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
+        
+        // Outer dot
+        ctx.beginPath();
+        ctx.arc(pt.u, pt.v, 8, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Reset shadow
+        ctx.shadowBlur = 0;
+
+        // Label text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(idx + 1, pt.u, pt.v);
+    });
+}
+
+// Color palette matching C++ for classes (RGBA formats for canvas)
+const CLASS_COLORS_RGBA = [
+    'rgba(51, 102, 255, 0.8)',   // dashed-white
+    'rgba(255, 153, 0, 0.8)',   // dashed-yellow
+    'rgba(0, 119, 255, 0.8)',   // double-solid-white
+    'rgba(0, 255, 102, 0.8)',   // main-lane
+    'rgba(255, 51, 51, 0.8)',   // other-lane
+    'rgba(128, 128, 128, 0.8)', // parking-zone
+    'rgba(0, 242, 254, 0.8)',   // solid-white
+    'rgba(255, 255, 0, 0.8)',   // solid-yellow
+    'rgba(0, 255, 127, 0.8)',   // start
+    'rgba(128, 0, 0, 0.8)',     // stop-line
+    'rgba(170, 0, 255, 0.8)',   // turn-lane
+    'rgba(255, 0, 255, 0.8)'    // vehicle
+];
+
+function drawBEV(telemetry) {
+    const canvas = document.getElementById("bev-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, w, h);
+    
+    // Coordinate mapping bounds
+    // Lateral range (X): -1000mm to +1000mm (width 2000mm)
+    // Longitudinal range (Y): 0mm to 3500mm (height 3500mm)
+    const xRange = 2000;
+    const yRange = 3500;
+    
+    const scaleX = w / xRange;
+    const scaleY = h / yRange;
+    
+    const toCanvasX = (X) => w / 2 + X * scaleX;
+    const toCanvasY = (Y) => h - Y * scaleY;
+
+    // Draw Grid Lines (every 500mm)
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.lineWidth = 1;
+    
+    // Horizontal lines (Y distance)
+    for (let y = 500; y <= yRange; y += 500) {
+        const cy = toCanvasY(y);
+        ctx.beginPath();
+        ctx.moveTo(0, cy);
+        ctx.lineTo(w, cy);
+        ctx.stroke();
+        
+        ctx.fillStyle = "rgba(164, 159, 198, 0.4)";
+        ctx.font = "9px monospace";
+        ctx.textAlign = "left";
+        ctx.fillText(`${(y/1000).toFixed(1)}m`, 5, cy - 3);
+    }
+    
+    // Vertical lines (X lateral offset)
+    for (let x = -1000; x <= 1000; x += 500) {
+        const cx = toCanvasX(x);
+        ctx.beginPath();
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, h);
+        ctx.stroke();
+        
+        if (x !== 0) {
+            ctx.fillStyle = "rgba(164, 159, 198, 0.4)";
+            ctx.font = "9px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(`${x > 0 ? '+' : ''}${(x/1000).toFixed(1)}m`, cx, h - 5);
+        }
+    }
+
+    // Draw centerline (Y axis)
+    ctx.strokeStyle = "rgba(138, 75, 243, 0.2)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(toCanvasX(0), 0);
+    ctx.lineTo(toCanvasX(0), h);
+    ctx.stroke();
+
+    // Draw vehicle shape at bottom center (X=0, Y=0)
+    const vWidth = 200 * scaleX;
+    const vHeight = 300 * scaleY;
+    
+    ctx.fillStyle = "rgba(0, 242, 254, 0.3)";
+    ctx.strokeStyle = "var(--accent-cyan)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(w / 2 - vWidth / 2, h - vHeight, vWidth, vHeight);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Center point representing origin
+    ctx.fillStyle = "var(--accent-cyan)";
+    ctx.beginPath();
+    ctx.arc(w / 2, h, 4, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Draw transformed polygons from telemetry
+    if (telemetry && telemetry.objects) {
+        let hasRealWorldCoords = false;
+        
+        telemetry.objects.forEach(obj => {
+            if (obj.polygons_real_world && obj.polygons_real_world.length > 0) {
+                hasRealWorldCoords = true;
+                const color = CLASS_COLORS_RGBA[obj.label % CLASS_COLORS_RGBA.length];
+                
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color.replace('0.8', '1.0');
+                ctx.lineWidth = 2;
+                
+                obj.polygons_real_world.forEach(poly => {
+                    if (poly.length === 0) return;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(poly[0][0]), toCanvasY(poly[0][1]));
+                    for (let i = 1; i < poly.length; i++) {
+                        ctx.lineTo(toCanvasX(poly[i][0]), toCanvasY(poly[i][1]));
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                });
+            }
+        });
+        
+        // Update status badge if real-world telemetry is received
+        const statusBadge = document.getElementById("bev-status");
+        if (hasRealWorldCoords && statusBadge) {
+            statusBadge.innerText = "CALIBRATED";
+            statusBadge.className = "badge success";
+            statusBadge.classList.remove("idle");
+        }
+    }
 }

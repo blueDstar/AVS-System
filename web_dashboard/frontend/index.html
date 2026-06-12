@@ -36,9 +36,15 @@
             <section class="panel main-stream-panel">
                 <div class="panel-header">
                     <h2><span class="icon">📹</span> Live Perception Stream</h2>
-                    <div class="stream-badge" id="stream-active-badge">
-                        <span class="badge-dot"></span>
-                        <span class="badge-text">LIVE</span>
+                    <div class="header-controls">
+                        <div class="view-toggle-group">
+                            <button id="btn-view-normal" class="btn-view-toggle active">Normal</button>
+                            <button id="btn-view-ipm" class="btn-view-toggle">IPM Warp</button>
+                        </div>
+                        <div class="stream-badge" id="stream-active-badge">
+                            <span class="badge-dot"></span>
+                            <span class="badge-text">LIVE</span>
+                        </div>
                     </div>
                 </div>
                 <div class="stream-container">
@@ -81,6 +87,21 @@
                             <span class="metric-title">Processing FPS</span>
                             <span class="metric-value" id="val-fps">0.0 <span class="unit">FPS</span></span>
                         </div>
+                    </div>
+                </section>
+
+                <!-- BIRD'S EYE VIEW PANEL -->
+                <section class="panel bev-panel">
+                    <div class="panel-header">
+                        <h2><span class="icon">🗺️</span> Real-World Bird's Eye View</h2>
+                        <span class="badge idle" id="bev-status">NOT CALIBRATED</span>
+                    </div>
+                    <div class="bev-container" style="display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                        <canvas id="bev-canvas" width="280" height="350"></canvas>
+                    </div>
+                    <div class="bev-footer" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; font-weight: 600;">
+                        <span>Grid interval: 500 mm</span>
+                        <span>Vehicle at bottom center</span>
                     </div>
                 </section>
 
@@ -129,8 +150,9 @@
                         </select>
                     </div>
 
-                    <div class="button-group">
-                        <button id="btn-apply" class="btn primary">Apply Settings</button>
+                    <div class="button-group" style="display: flex; gap: 10px;">
+                        <button id="btn-apply" class="btn primary" style="flex: 2;">Apply Settings</button>
+                        <button id="btn-calibrate" class="btn secondary" style="flex: 1; background: rgba(138, 75, 243, 0.15); border: 1px solid var(--border-hover); color: var(--text-primary); font-weight: 700;">Calibrate</button>
                     </div>
                 </section>
             </div>
@@ -206,6 +228,72 @@
             </section>
         </div>
     </div>
+
+    <!-- CALIBRATION MODAL -->
+    <div id="calibration-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2><span class="icon">📐</span> IPM Homography Calibration</h2>
+                <button id="btn-close-calibration" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="calibration-workspace">
+                    <div class="calibration-image-container">
+                        <img id="calibration-img" src="" alt="Calibration Frame" />
+                        <canvas id="calibration-canvas" width="640" height="480"></canvas>
+                    </div>
+                    <div class="calibration-hint">
+                        <p>Click exactly 4 points on the image in <strong>clockwise order starting from Top-Left</strong>:</p>
+                        <ol>
+                            <li><span class="point-badge p1">1</span> Top-Left (Far Left)</li>
+                            <li><span class="point-badge p2">2</span> Top-Right (Far Right)</li>
+                            <li><span class="point-badge p3">3</span> Bottom-Right (Near Right)</li>
+                            <li><span class="point-badge p4">4</span> Bottom-Left (Near Left)</li>
+                        </ol>
+                        <p class="coords-note">Note: Origin (0,0) is center of vehicle bumper. Y is forward, X is right.</p>
+                    </div>
+                </div>
+                <div class="calibration-sidebar">
+                    <h3>Real-world Coordinates (mm)</h3>
+                    <div class="points-inputs">
+                        <div class="point-input-group" id="group-p1">
+                            <span class="point-num p1">1</span>
+                            <div class="input-row">
+                                <label>X: <input type="number" id="p1-x" value="-150" step="10"></label>
+                                <label>Y: <input type="number" id="p1-y" value="1000" step="10"></label>
+                            </div>
+                        </div>
+                        <div class="point-input-group" id="group-p2">
+                            <span class="point-num p2">2</span>
+                            <div class="input-row">
+                                <label>X: <input type="number" id="p2-x" value="150" step="10"></label>
+                                <label>Y: <input type="number" id="p2-y" value="1000" step="10"></label>
+                            </div>
+                        </div>
+                        <div class="point-input-group" id="group-p3">
+                            <span class="point-num p3">3</span>
+                            <div class="input-row">
+                                <label>X: <input type="number" id="p3-x" value="150" step="10"></label>
+                                <label>Y: <input type="number" id="p3-y" value="500" step="10"></label>
+                            </div>
+                        </div>
+                        <div class="point-input-group" id="group-p4">
+                            <span class="point-num p4">4</span>
+                            <div class="input-row">
+                                <label>X: <input type="number" id="p4-x" value="-150" step="10"></label>
+                                <label>Y: <input type="number" id="p4-y" value="500" step="10"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sidebar-buttons">
+                        <button id="btn-save-calibration" class="btn primary">Save Calibration</button>
+                        <button id="btn-clear-calibration" class="btn secondary" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);">Clear Points</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

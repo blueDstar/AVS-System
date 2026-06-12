@@ -75,12 +75,20 @@ ament_target_dependencies(video_publisher_node
   cv_bridge
 )
 
+# Create IPM coordinates transformation node
+add_executable(ipm_transform_node src/ipm_transform_node.cpp)
+ament_target_dependencies(ipm_transform_node
+  rclcpp
+  std_msgs
+)
+
 # Install rules
 install(TARGETS
   yolo26_seg_lib
   ncnn_inference_node
   video_test_node
   video_publisher_node
+  ipm_transform_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
