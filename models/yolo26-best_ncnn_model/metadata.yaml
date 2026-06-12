@@ -1,6 +1,6 @@
-description: Ultralytics YOLO26n-seg model trained on /content/data.yaml
+description: Ultralytics YOLO26n-seg model trained on /kaggle/working/data.yaml
 author: Ultralytics
-date: '2026-06-05T00:36:41.696239'
+date: '2026-06-12T13:13:16.351524'
 version: 8.4.60
 license: AGPL-3.0 License (https://ultralytics.com/license)
 docs: https://docs.ultralytics.com
@@ -12,13 +12,17 @@ imgsz:
 - 320
 names:
   0: dashed-white
-  1: double-solid-white
-  2: main-lane
-  3: other-lane
-  4: solid-white
-  5: solid-yellow
-  6: turn-lane
-  7: vehicle
+  1: dashed-yellow
+  2: double-solid-white
+  3: main-lane
+  4: other-lane
+  5: parking-zone
+  6: solid-white
+  7: solid-yellow
+  8: start
+  9: stop-line
+  10: turn-lane
+  11: vehicle
 args:
   batch: 1
   half: false
