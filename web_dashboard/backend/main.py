@@ -292,7 +292,11 @@ async def frame_generator(view: str = "normal"):
                                 [0, 0, 1.0]
                             ])
                             H_warped = np.dot(M, latest_homography_matrix)
-                            img = cv2.warpPerspective(img, H_warped, (W, Ho))
+                            try:
+                                H_inv = np.linalg.inv(H_warped)
+                                img = cv2.warpPerspective(img, H_inv, (W, Ho))
+                            except np.linalg.LinAlgError:
+                                cv2.putText(img, "IPM Math Error", (120, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
                         else:
                             # Overlay warning text if not calibrated
                             cv2.putText(img, "IPM Not Calibrated", (120, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
