@@ -5,9 +5,11 @@
 #include <fstream>
 #include <filesystem>
 #include <cmath>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include <opencv2/opencv.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -100,6 +102,203 @@ private:
         }
     }
 
+    struct Waypoint {
+        double x;
+        double y;
+    };
+
+    std::vector<Waypoint> extract_centerline_waypoints_y(const std::vector<std::vector<double>>& poly_real_world, double step_mm = 100.0) {
+        std::vector<Waypoint> waypoints;
+        if (poly_real_world.empty()) return waypoints;
+
+        double min_y = 1e9;
+        double max_y = -1e9;
+        for (const auto& pt : poly_real_world) {
+            if (pt.size() >= 2) {
+                double y = pt[1];
+                if (y < min_y) min_y = y;
+                if (y > max_y) max_y = y;
+            }
+        }
+
+        if (min_y >= max_y) return waypoints;
+
+        double start_y = std::ceil(min_y / step_mm) * step_mm;
+        for (double y = start_y; y <= max_y; y += step_mm) {
+            std::vector<double> x_intersections;
+            size_t n = poly_real_world.size();
+            for (size_t i = 0; i < n; ++i) {
+                const auto& p1 = poly_real_world[i];
+                const auto& p2 = poly_real_world[(i + 1) % n];
+                if (p1.size() < 2 || p2.size() < 2) continue;
+
+                double x1 = p1[0], y1 = p1[1];
+                double x2 = p2[0], y2 = p2[1];
+
+                if ((y1 <= y && y2 >= y) || (y2 <= y && y1 >= y)) {
+                    if (std::abs(y2 - y1) > 1e-5) {
+                        double x_int = x1 + (y - y1) * (x2 - x1) / (y2 - y1);
+                        x_intersections.push_back(x_int);
+                    }
+                }
+            }
+
+            if (!x_intersections.empty()) {
+                auto minmax = std::minmax_element(x_intersections.begin(), x_intersections.end());
+                double x_left = *minmax.first;
+                double x_right = *minmax.second;
+                double x_mid = (x_left + x_right) / 2.0;
+                waypoints.push_back({x_mid, y});
+            }
+        }
+
+        std::sort(waypoints.begin(), waypoints.end(), [](const Waypoint& a, const Waypoint& b) {
+            return a.y < b.y;
+        });
+
+        return waypoints;
+    }
+
+    std::vector<Waypoint> extract_centerline_waypoints_x(const std::vector<std::vector<double>>& poly_real_world, double step_mm = 100.0) {
+        std::vector<Waypoint> waypoints;
+        if (poly_real_world.empty()) return waypoints;
+
+        double min_x = 1e9;
+        double max_x = -1e9;
+        for (const auto& pt : poly_real_world) {
+            if (pt.size() >= 2) {
+                double x = pt[0];
+                if (x < min_x) min_x = x;
+                if (x > max_x) max_x = x;
+            }
+        }
+
+        if (min_x >= max_x) return waypoints;
+
+        double start_x = std::ceil(min_x / step_mm) * step_mm;
+        for (double x = start_x; x <= max_x; x += step_mm) {
+            std::vector<double> y_intersections;
+            size_t n = poly_real_world.size();
+            for (size_t i = 0; i < n; ++i) {
+                const auto& p1 = poly_real_world[i];
+                const auto& p2 = poly_real_world[(i + 1) % n];
+                if (p1.size() < 2 || p2.size() < 2) continue;
+
+                double x1 = p1[0], y1 = p1[1];
+                double x2 = p2[0], y2 = p2[1];
+
+                if ((x1 <= x && x2 >= x) || (x2 <= x && x1 >= x)) {
+                    if (std::abs(x2 - x1) > 1e-5) {
+                        double y_int = y1 + (x - x1) * (y2 - y1) / (x2 - x1);
+                        y_intersections.push_back(y_int);
+                    }
+                }
+            }
+
+            if (!y_intersections.empty()) {
+                auto minmax = std::minmax_element(y_intersections.begin(), y_intersections.end());
+                double y_min_val = *minmax.first;
+                double y_max_val = *minmax.second;
+                double y_mid = (y_min_val + y_max_val) / 2.0;
+                waypoints.push_back({x, y_mid});
+            }
+        }
+
+        std::sort(waypoints.begin(), waypoints.end(), [](const Waypoint& a, const Waypoint& b) {
+            return a.x < b.x;
+        });
+
+        return waypoints;
+    }
+
+    std::vector<double> fit_polynomial_xy(const std::vector<Waypoint>& waypoints) {
+        std::vector<double> coeffs(4, 0.0);
+        size_t n = waypoints.size();
+        if (n < 2) {
+            return coeffs;
+        }
+
+        if (n >= 4) {
+            cv::Mat A(n, 4, CV_64F);
+            cv::Mat B(n, 1, CV_64F);
+            for (size_t i = 0; i < n; ++i) {
+                double y = waypoints[i].y;
+                A.at<double>(i, 0) = y * y * y;
+                A.at<double>(i, 1) = y * y;
+                A.at<double>(i, 2) = y;
+                A.at<double>(i, 3) = 1.0;
+                B.at<double>(i, 0) = waypoints[i].x;
+            }
+            cv::Mat C;
+            cv::solve(A, B, C, cv::DECOMP_SVD);
+            coeffs[0] = C.at<double>(0, 0); // a3
+            coeffs[1] = C.at<double>(1, 0); // a2
+            coeffs[2] = C.at<double>(2, 0); // a1
+            coeffs[3] = C.at<double>(3, 0); // a0
+        } else {
+            cv::Mat A(n, 2, CV_64F);
+            cv::Mat B(n, 1, CV_64F);
+            for (size_t i = 0; i < n; ++i) {
+                double y = waypoints[i].y;
+                A.at<double>(i, 0) = y;
+                A.at<double>(i, 1) = 1.0;
+                B.at<double>(i, 0) = waypoints[i].x;
+            }
+            cv::Mat C;
+            cv::solve(A, B, C, cv::DECOMP_SVD);
+            coeffs[0] = 0.0; // a3
+            coeffs[1] = 0.0; // a2
+            coeffs[2] = C.at<double>(0, 0); // a1
+            coeffs[3] = C.at<double>(1, 0); // a0
+        }
+
+        return coeffs;
+    }
+
+    std::vector<double> fit_polynomial_yx(const std::vector<Waypoint>& waypoints) {
+        std::vector<double> coeffs(4, 0.0);
+        size_t n = waypoints.size();
+        if (n < 2) {
+            return coeffs;
+        }
+
+        if (n >= 4) {
+            cv::Mat A(n, 4, CV_64F);
+            cv::Mat B(n, 1, CV_64F);
+            for (size_t i = 0; i < n; ++i) {
+                double x = waypoints[i].x;
+                A.at<double>(i, 0) = x * x * x;
+                A.at<double>(i, 1) = x * x;
+                A.at<double>(i, 2) = x;
+                A.at<double>(i, 3) = 1.0;
+                B.at<double>(i, 0) = waypoints[i].y;
+            }
+            cv::Mat C;
+            cv::solve(A, B, C, cv::DECOMP_SVD);
+            coeffs[0] = C.at<double>(0, 0); // a3
+            coeffs[1] = C.at<double>(1, 0); // a2
+            coeffs[2] = C.at<double>(2, 0); // a1
+            coeffs[3] = C.at<double>(3, 0); // a0
+        } else {
+            cv::Mat A(n, 2, CV_64F);
+            cv::Mat B(n, 1, CV_64F);
+            for (size_t i = 0; i < n; ++i) {
+                double x = waypoints[i].x;
+                A.at<double>(i, 0) = x;
+                A.at<double>(i, 1) = 1.0;
+                B.at<double>(i, 0) = waypoints[i].y;
+            }
+            cv::Mat C;
+            cv::solve(A, B, C, cv::DECOMP_SVD);
+            coeffs[0] = 0.0; // a3
+            coeffs[1] = 0.0; // a2
+            coeffs[2] = C.at<double>(0, 0); // a1
+            coeffs[3] = C.at<double>(1, 0); // a0
+        }
+
+        return coeffs;
+    }
+
     void telemetry_callback(const std_msgs::msg::String::SharedPtr msg) {
         // Periodically check/reload calibration file
         check_calibration_update();
@@ -147,6 +346,124 @@ private:
                                 }
                             }
                             obj["polygons_real_world"].push_back(poly_real);
+                        }
+                    }
+
+                    // Extract centerline waypoints and fit polynomial for lane objects
+                    int label = obj.contains("label") ? obj["label"].get<int>() : -1;
+                    bool is_lane = (label == 3 || label == 4 || label == 10);
+                    if (is_lane) {
+                        obj["waypoints"] = json::array();
+                        obj["polynomial"] = {{"a3", 0.0}, {"a2", 0.0}, {"a1", 0.0}, {"a0", 0.0}};
+                        obj["lateral_offset_mm"] = 0.0;
+                        obj["longitudinal_offset_mm"] = 0.0;
+                        obj["heading_angle_rad"] = 0.0;
+                        obj["curvature_inv_mm"] = 0.0;
+
+                        if (obj.contains("polygons_real_world") && obj["polygons_real_world"].is_array()) {
+                            std::vector<Waypoint> all_waypoints;
+                            
+                            // Check if turn-lane (label 10) -> sweep along X and fit y(x)
+                            if (label == 10) {
+                                for (const auto& poly_json : obj["polygons_real_world"]) {
+                                    if (poly_json.is_array()) {
+                                        std::vector<std::vector<double>> poly_pts;
+                                        for (const auto& pt : poly_json) {
+                                            if (pt.is_array() && pt.size() >= 2) {
+                                                poly_pts.push_back({pt[0].get<double>(), pt[1].get<double>()});
+                                            }
+                                        }
+                                        auto wps = extract_centerline_waypoints_x(poly_pts, 100.0);
+                                        all_waypoints.insert(all_waypoints.end(), wps.begin(), wps.end());
+                                    }
+                                }
+
+                                if (!all_waypoints.empty()) {
+                                    std::sort(all_waypoints.begin(), all_waypoints.end(), [](const Waypoint& a, const Waypoint& b) {
+                                        return a.x < b.x;
+                                    });
+
+                                    std::vector<Waypoint> unique_waypoints;
+                                    for (const auto& wp : all_waypoints) {
+                                        if (unique_waypoints.empty() || std::abs(unique_waypoints.back().x - wp.x) > 1e-3) {
+                                            unique_waypoints.push_back(wp);
+                                        } else {
+                                            unique_waypoints.back().y = (unique_waypoints.back().y + wp.y) / 2.0;
+                                        }
+                                    }
+
+                                    for (const auto& wp : unique_waypoints) {
+                                        double rx = std::round(wp.x * 10.0) / 10.0;
+                                        double ry = std::round(wp.y * 10.0) / 10.0;
+                                        obj["waypoints"].push_back({rx, ry});
+                                    }
+
+                                    std::vector<double> coeffs = fit_polynomial_yx(unique_waypoints);
+                                    obj["polynomial"]["a3"] = coeffs[0];
+                                    obj["polynomial"]["a2"] = coeffs[1];
+                                    obj["polynomial"]["a1"] = coeffs[2];
+                                    obj["polynomial"]["a0"] = coeffs[3];
+
+                                    double longitudinal_offset = coeffs[3];
+                                    double heading_angle = std::atan(coeffs[2]);
+                                    double curvature = 2.0 * coeffs[1];
+
+                                    obj["lateral_offset_mm"] = 0.0;
+                                    obj["longitudinal_offset_mm"] = std::round(longitudinal_offset * 10.0) / 10.0;
+                                    obj["heading_angle_rad"] = std::round(heading_angle * 1000.0) / 1000.0;
+                                    obj["curvature_inv_mm"] = std::round(curvature * 1e6) / 1e6;
+                                }
+                            } else {
+                                // main-lane (label 3) or other-lane (label 4) -> sweep along Y and fit x(y)
+                                for (const auto& poly_json : obj["polygons_real_world"]) {
+                                    if (poly_json.is_array()) {
+                                        std::vector<std::vector<double>> poly_pts;
+                                        for (const auto& pt : poly_json) {
+                                            if (pt.is_array() && pt.size() >= 2) {
+                                                poly_pts.push_back({pt[0].get<double>(), pt[1].get<double>()});
+                                            }
+                                        }
+                                        auto wps = extract_centerline_waypoints_y(poly_pts, 100.0);
+                                        all_waypoints.insert(all_waypoints.end(), wps.begin(), wps.end());
+                                    }
+                                }
+
+                                if (!all_waypoints.empty()) {
+                                    std::sort(all_waypoints.begin(), all_waypoints.end(), [](const Waypoint& a, const Waypoint& b) {
+                                        return a.y < b.y;
+                                    });
+
+                                    std::vector<Waypoint> unique_waypoints;
+                                    for (const auto& wp : all_waypoints) {
+                                        if (unique_waypoints.empty() || std::abs(unique_waypoints.back().y - wp.y) > 1e-3) {
+                                            unique_waypoints.push_back(wp);
+                                        } else {
+                                            unique_waypoints.back().x = (unique_waypoints.back().x + wp.x) / 2.0;
+                                        }
+                                    }
+
+                                    for (const auto& wp : unique_waypoints) {
+                                        double rx = std::round(wp.x * 10.0) / 10.0;
+                                        double ry = std::round(wp.y * 10.0) / 10.0;
+                                        obj["waypoints"].push_back({rx, ry});
+                                    }
+
+                                    std::vector<double> coeffs = fit_polynomial_xy(unique_waypoints);
+                                    obj["polynomial"]["a3"] = coeffs[0];
+                                    obj["polynomial"]["a2"] = coeffs[1];
+                                    obj["polynomial"]["a1"] = coeffs[2];
+                                    obj["polynomial"]["a0"] = coeffs[3];
+
+                                    double lateral_offset = coeffs[3];
+                                    double heading_angle = std::atan(coeffs[2]);
+                                    double curvature = 2.0 * coeffs[1];
+
+                                    obj["lateral_offset_mm"] = std::round(lateral_offset * 10.0) / 10.0;
+                                    obj["longitudinal_offset_mm"] = 0.0;
+                                    obj["heading_angle_rad"] = std::round(heading_angle * 1000.0) / 1000.0;
+                                    obj["curvature_inv_mm"] = std::round(curvature * 1e6) / 1e6;
+                                }
+                            }
                         }
                     }
                 }

@@ -807,4 +807,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/ncnn_inference_node.dir/DependInfo.cmake"
   "CMakeFiles/video_test_node.dir/DependInfo.cmake"
   "CMakeFiles/video_publisher_node.dir/DependInfo.cmake"
+  "CMakeFiles/ipm_transform_node.dir/DependInfo.cmake"
   )

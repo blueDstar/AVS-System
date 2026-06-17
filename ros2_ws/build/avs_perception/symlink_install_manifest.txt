@@ -2,6 +2,7 @@
 /workspace/ros2_ws/install/avs_perception/lib/avs_perception/ncnn_inference_node
 /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_test_node
 /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node
+/workspace/ros2_ws/install/avs_perception/lib/avs_perception/ipm_transform_node
 /workspace/ros2_ws/install/avs_perception/share/avs_perception/launch/perception.launch.py
 /workspace/ros2_ws/install/avs_perception/share/ament_index/resource_index/package_run_dependencies/avs_perception
 /workspace/ros2_ws/install/avs_perception/share/ament_index/resource_index/parent_prefix_path/avs_perception

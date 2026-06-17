@@ -294,7 +294,65 @@ async def frame_generator(view: str = "normal"):
                             H_warped = np.dot(M, latest_homography_matrix)
                             try:
                                 H_inv = np.linalg.inv(H_warped)
-                                img = cv2.warpPerspective(img, H_inv, (W, Ho))
+                                
+                                # Mask out sky/horizon to avoid perspective wrap-around reflection
+                                H_orig = latest_homography_matrix
+                                if len(H_orig) >= 3 and abs(H_orig[2][1]) > 1e-6:
+                                    v_horizon = int(-H_orig[2][2] / H_orig[2][1])
+                                    v_horizon = max(0, min(v_horizon, img.shape[0]))
+                                    img_masked = img.copy()
+                                    img_masked[0:v_horizon + 5, :] = 0
+                                else:
+                                    img_masked = img
+                                    
+                                img = cv2.warpPerspective(img_masked, H_inv, (W, Ho))
+
+                                # Draw waypoints and fitted curves on the warped image
+                                if telemetry and "objects" in telemetry:
+                                    for obj in telemetry["objects"]:
+                                        label = obj.get("label", 0)
+                                        color = CLASS_COLORS[label % len(CLASS_COLORS)]
+
+                                        # 1. Draw waypoints
+                                        waypoints = obj.get("waypoints", [])
+                                        for wp in waypoints:
+                                            if len(wp) >= 2:
+                                                wx, wy = wp[0], wp[1]
+                                                px = int(320.0 + wx * 320.0 / 1000.0)
+                                                py = int(480.0 - wy * 480.0 / 3500.0)
+                                                if 0 <= px < W and 0 <= py < Ho:
+                                                    cv2.circle(img, (px, py), 4, color, -1)
+                                                    cv2.circle(img, (px, py), 5, (255, 255, 255), 1)
+
+                                        # 2. Draw fitted polynomial curve
+                                        poly = obj.get("polynomial")
+                                        if poly and any(v != 0 for v in poly.values()):
+                                            a3 = poly.get("a3", 0.0)
+                                            a2 = poly.get("a2", 0.0)
+                                            a1 = poly.get("a1", 0.0)
+                                            a0 = poly.get("a0", 0.0)
+
+                                            pts_curve = []
+                                            if label == 10:  # turn-lane: fitted as y(x)
+                                                # Sweep X from -1000 to 1000
+                                                for x_val in range(-1000, 1000, 50):
+                                                    y_val = a3 * (x_val**3) + a2 * (x_val**2) + a1 * x_val + a0
+                                                    px = int(320.0 + x_val * 320.0 / 1000.0)
+                                                    py = int(480.0 - y_val * 480.0 / 3500.0)
+                                                    if 0 <= px < W and 0 <= py < Ho:
+                                                        pts_curve.append([px, py])
+                                            else:  # regular lanes: fitted as x(y)
+                                                # Sweep Y from 0 to 3500
+                                                for y_val in range(0, 3500, 100):
+                                                    x_val = a3 * (y_val**3) + a2 * (y_val**2) + a1 * y_val + a0
+                                                    px = int(320.0 + x_val * 320.0 / 1000.0)
+                                                    py = int(480.0 - y_val * 480.0 / 3500.0)
+                                                    if 0 <= px < W and 0 <= py < Ho:
+                                                        pts_curve.append([px, py])
+
+                                            if len(pts_curve) > 1:
+                                                pts_curve = np.array(pts_curve, dtype=np.int32)
+                                                cv2.polylines(img, [pts_curve], False, color, 3, cv2.LINE_AA)
                             except np.linalg.LinAlgError:
                                 cv2.putText(img, "IPM Math Error", (120, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
                         else:
@@ -489,7 +547,7 @@ async def save_calibration(data: dict):
             "homography_matrix": H.tolist(),
             "pixel_points": pixel_points,
             "world_points": world_points,
-            "image_size": [640, 480],
+            "image_size": data.get("image_size", [640, 480]),
             "calibrated_at": datetime.now().isoformat()
         }
         

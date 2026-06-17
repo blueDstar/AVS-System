@@ -4,6 +4,7 @@
 /workspace/ros2_ws/build/avs_perception/CMakeFiles/ncnn_inference_node.dir
 /workspace/ros2_ws/build/avs_perception/CMakeFiles/video_test_node.dir
 /workspace/ros2_ws/build/avs_perception/CMakeFiles/video_publisher_node.dir
+/workspace/ros2_ws/build/avs_perception/CMakeFiles/ipm_transform_node.dir
 /workspace/ros2_ws/build/avs_perception/CMakeFiles/test.dir
 /workspace/ros2_ws/build/avs_perception/CMakeFiles/edit_cache.dir
 /workspace/ros2_ws/build/avs_perception/CMakeFiles/rebuild_cache.dir

@@ -315,7 +315,7 @@ message(STATUS "Execute custom install script")
 
 # begin of custom install code
 
-# install("TARGETS" "yolo26_seg_lib" "ncnn_inference_node" "video_test_node" "video_publisher_node" "DESTINATION" "lib/avs_perception")
+# install("TARGETS" "yolo26_seg_lib" "ncnn_inference_node" "video_test_node" "video_publisher_node" "ipm_transform_node" "DESTINATION" "lib/avs_perception")
 include("/workspace/ros2_ws/build/avs_perception/ament_cmake_symlink_install_targets_0_${CMAKE_INSTALL_CONFIG_NAME}.cmake")
 
 # install(DIRECTORY "launch" "DESTINATION" "share/avs_perception")

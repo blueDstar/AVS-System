@@ -77,6 +77,7 @@ ament_target_dependencies(video_publisher_node
 
 # Create IPM coordinates transformation node
 add_executable(ipm_transform_node src/ipm_transform_node.cpp)
+target_link_libraries(ipm_transform_node ${OpenCV_LIBRARIES})
 ament_target_dependencies(ipm_transform_node
   rclcpp
   std_msgs
