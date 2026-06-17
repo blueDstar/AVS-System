@@ -835,46 +835,4 @@ body {
     gap: 10px;
 }
 
-/* Header Controls & View Toggle Switch */
-.header-controls {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.view-toggle-group {
-    display: flex;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 2px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.btn-view-toggle {
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
-    padding: 6px 14px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    outline: none;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.btn-view-toggle:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.btn-view-toggle.active {
-    background: linear-gradient(135deg, var(--accent-indigo, #8a4bf3), var(--accent-purple, #b5179e));
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(138, 75, 243, 0.4);
-}
-
 

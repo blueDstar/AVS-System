@@ -402,41 +402,19 @@ function setupControlListeners() {
     });
 }
 
-let currentViewMode = "normal";
-
 // Periodically check if stream image is loading
 function checkStreamActive() {
     const streamImg = document.getElementById("mjpeg-stream");
     streamImg.onerror = () => {
         console.warn("MJPEG stream link failed or offline. Retrying stream reload...");
         setTimeout(() => {
-            streamImg.src = `/api/stream?view=${currentViewMode}&t=` + new Date().getTime();
+            streamImg.src = `/api/stream?t=` + new Date().getTime();
         }, 5000);
     };
 }
 
 function initViewToggle() {
-    const btnNormal = document.getElementById("btn-view-normal");
-    const btnIpm = document.getElementById("btn-view-ipm");
-    const streamImg = document.getElementById("mjpeg-stream");
-
-    if (!btnNormal || !btnIpm || !streamImg) return;
-
-    btnNormal.addEventListener("click", () => {
-        if (currentViewMode === "normal") return;
-        currentViewMode = "normal";
-        btnNormal.classList.add("active");
-        btnIpm.classList.remove("active");
-        streamImg.src = "/api/stream?view=normal";
-    });
-
-    btnIpm.addEventListener("click", () => {
-        if (currentViewMode === "ipm") return;
-        currentViewMode = "ipm";
-        btnIpm.classList.add("active");
-        btnNormal.classList.remove("active");
-        streamImg.src = "/api/stream?view=ipm";
-    });
+    // No-op: IPM Warp view mode removed
 }
 
 // --- CALIBRATION & BEV INTEGRATION ---

@@ -32,23 +32,6 @@ latest_telemetry = {}
 connected_clients: Set[WebSocket] = set()
 loop = None
 bridge_node = None
-latest_homography_matrix = None
-
-def load_homography_on_startup():
-    global latest_homography_matrix
-    paths = ["/workspace/config/calibration.json", "config/calibration.json"]
-    for path in paths:
-        if os.path.exists(path):
-            try:
-                with open(path, 'r') as f:
-                    data = json.load(f)
-                    latest_homography_matrix = np.array(data["homography_matrix"], dtype=np.float32)
-                    logger.info(f"Loaded homography matrix from {path} on startup.")
-                    return
-            except Exception as e:
-                logger.error(f"Error loading homography on startup from {path}: {e}")
-
-load_homography_on_startup()
 
 def load_config():
     paths = ["/workspace/config/config.json", "config/config.json"]
@@ -233,9 +216,9 @@ CLASS_NAMES = [
 ]
 
 # Live MJPEG Stream Endpoint with Real-Time Overlay Rendering
-async def frame_generator(view: str = "normal"):
-    global latest_jpeg_frame, latest_telemetry, latest_homography_matrix
-    logger.info(f"MJPEG stream connection opened (view mode: {view}).")
+async def frame_generator():
+    global latest_jpeg_frame, latest_telemetry
+    logger.info("MJPEG stream connection opened.")
     
     last_processed_frame = None
     
@@ -286,70 +269,6 @@ async def frame_generator(view: str = "normal"):
                         # Blend the transparency mask overlay
                         cv2.addWeighted(overlay, 0.4, img, 0.6, 0, img)
                     
-                    # Apply Homography Warp if view mode is set to "ipm"
-                    if view == "ipm":
-                        if latest_homography_matrix is not None:
-                            W = 640
-                            Ho = 480
-                            # Map ground X [-1000, 1000] and Y [0, 3500] to pixel grid [0, W] and [Ho, 0]
-                            M = np.float32([
-                                [W / 2000.0, 0, W / 2.0],
-                                [0, -Ho / 3500.0, Ho],
-                                [0, 0, 1.0]
-                            ])
-                            H_warped = np.dot(M, latest_homography_matrix)
-                            try:
-                                H_inv = np.linalg.inv(H_warped)
-                                
-                                # Mask out sky/horizon to avoid perspective wrap-around reflection
-                                H_orig = latest_homography_matrix
-                                if len(H_orig) >= 3 and abs(H_orig[2][1]) > 1e-6:
-                                    v_horizon = int(-H_orig[2][2] / H_orig[2][1])
-                                    v_horizon = max(0, min(v_horizon, img.shape[0]))
-                                    img_masked = img.copy()
-                                    img_masked[0:v_horizon + 5, :] = 0
-                                else:
-                                    img_masked = img
-                                    
-                                img = cv2.warpPerspective(img_masked, H_inv, (W, Ho))
-
-                                # Draw waypoints and fitted curves on the warped image
-                                if telemetry and "objects" in telemetry:
-                                    for obj in telemetry["objects"]:
-                                        label = obj.get("label", 0)
-                                        if label not in [3, 4, 10]:
-                                            continue
-                                        color = CLASS_COLORS[label % len(CLASS_COLORS)]
-
-                                        # 1. Draw waypoints
-                                        waypoints = obj.get("waypoints", [])
-                                        for wp in waypoints:
-                                            if len(wp) >= 2:
-                                                wx, wy = wp[0], wp[1]
-                                                px = int(320.0 + wx * 320.0 / 1000.0)
-                                                py = int(480.0 - wy * 480.0 / 3500.0)
-                                                if 0 <= px < W and 0 <= py < Ho:
-                                                    cv2.circle(img, (px, py), 4, color, -1)
-                                                    cv2.circle(img, (px, py), 5, (255, 255, 255), 1)
-
-                                        # 2. Draw fitted polynomial curve by connecting waypoints
-                                        if waypoints and len(waypoints) > 1:
-                                            pts_curve = []
-                                            for wp in waypoints:
-                                                if len(wp) >= 2:
-                                                    wx, wy = wp[0], wp[1]
-                                                    px = int(320.0 + wx * 320.0 / 1000.0)
-                                                    py = int(480.0 - wy * 480.0 / 3500.0)
-                                                    if 0 <= px < W and 0 <= py < Ho:
-                                                        pts_curve.append([px, py])
-                                            if len(pts_curve) > 1:
-                                                pts_curve = np.array(pts_curve, dtype=np.int32)
-                                                cv2.polylines(img, [pts_curve], False, color, 3, cv2.LINE_AA)
-                            except np.linalg.LinAlgError:
-                                cv2.putText(img, "IPM Math Error", (120, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
-                        else:
-                            # Overlay warning text if not calibrated
-                            cv2.putText(img, "IPM Not Calibrated", (120, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
 
                     # Re-encode to JPEG
                     _, jpeg_bytes = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 80])
@@ -368,9 +287,9 @@ async def frame_generator(view: str = "normal"):
         logger.error(f"Error in MJPEG stream: {e}")
 
 @app.get("/api/stream")
-async def get_stream(view: str = "normal"):
+async def get_stream():
     return StreamingResponse(
-        frame_generator(view),
+        frame_generator(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
 
@@ -552,10 +471,6 @@ async def save_calibration(data: dict):
             json.dump(calib_data, f, indent=2)
             
         logger.info(f"Saved calibration matrix H to {calib_path}")
-        
-        # Update dynamic homography matrix in memory for active streams
-        global latest_homography_matrix
-        latest_homography_matrix = H
         
         return {"status": "success", "homography_matrix": H.tolist()}
     except Exception as e:
