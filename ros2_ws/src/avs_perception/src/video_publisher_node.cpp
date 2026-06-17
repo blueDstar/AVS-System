@@ -252,7 +252,7 @@ private:
         auto timestamp = this->now();
 
         // 1. Publish raw image (Image message)
-        if (image_pub_->get_subscription_count() > 0) {
+        {
             auto msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
             msg->header.stamp = timestamp;
             msg->header.frame_id = "camera_frame";
@@ -260,7 +260,7 @@ private:
         }
 
         // 2. Publish compressed image (CompressedImage message - JPEG format)
-        if (compressed_pub_->get_subscription_count() > 0) {
+        {
             sensor_msgs::msg::CompressedImage compressed_msg;
             compressed_msg.header.stamp = timestamp;
             compressed_msg.header.frame_id = "camera_frame";

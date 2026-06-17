@@ -117,17 +117,23 @@ class WebBridgeNode(Node):
 
     def telemetry_callback(self, msg):
         global latest_telemetry
+        logger.info(f"WebBridgeNode received telemetry from ROS2: {len(msg.data)} bytes")
         try:
             data = json.loads(msg.data)
             latest_telemetry = data
             
             # Broadcast to all connected WebSocket clients
             if connected_clients and loop:
+                logger.info(f"Broadcasting telemetry to {len(connected_clients)} WebSocket clients.")
                 for client in list(connected_clients):
                     asyncio.run_coroutine_threadsafe(
                         client.send_json(data),
                         loop
                     )
+            elif not connected_clients:
+                logger.info("No WebSocket clients connected to broadcast telemetry to.")
+            elif not loop:
+                logger.warning("Event loop is None, cannot broadcast telemetry.")
         except Exception as e:
             logger.error(f"Error parsing/broadcasting telemetry: {e}")
 
@@ -311,6 +317,8 @@ async def frame_generator(view: str = "normal"):
                                 if telemetry and "objects" in telemetry:
                                     for obj in telemetry["objects"]:
                                         label = obj.get("label", 0)
+                                        if label not in [3, 4, 10]:
+                                            continue
                                         color = CLASS_COLORS[label % len(CLASS_COLORS)]
 
                                         # 1. Draw waypoints
@@ -324,32 +332,16 @@ async def frame_generator(view: str = "normal"):
                                                     cv2.circle(img, (px, py), 4, color, -1)
                                                     cv2.circle(img, (px, py), 5, (255, 255, 255), 1)
 
-                                        # 2. Draw fitted polynomial curve
-                                        poly = obj.get("polynomial")
-                                        if poly and any(v != 0 for v in poly.values()):
-                                            a3 = poly.get("a3", 0.0)
-                                            a2 = poly.get("a2", 0.0)
-                                            a1 = poly.get("a1", 0.0)
-                                            a0 = poly.get("a0", 0.0)
-
+                                        # 2. Draw fitted polynomial curve by connecting waypoints
+                                        if waypoints and len(waypoints) > 1:
                                             pts_curve = []
-                                            if label == 10:  # turn-lane: fitted as y(x)
-                                                # Sweep X from -1000 to 1000
-                                                for x_val in range(-1000, 1000, 50):
-                                                    y_val = a3 * (x_val**3) + a2 * (x_val**2) + a1 * x_val + a0
-                                                    px = int(320.0 + x_val * 320.0 / 1000.0)
-                                                    py = int(480.0 - y_val * 480.0 / 3500.0)
+                                            for wp in waypoints:
+                                                if len(wp) >= 2:
+                                                    wx, wy = wp[0], wp[1]
+                                                    px = int(320.0 + wx * 320.0 / 1000.0)
+                                                    py = int(480.0 - wy * 480.0 / 3500.0)
                                                     if 0 <= px < W and 0 <= py < Ho:
                                                         pts_curve.append([px, py])
-                                            else:  # regular lanes: fitted as x(y)
-                                                # Sweep Y from 0 to 3500
-                                                for y_val in range(0, 3500, 100):
-                                                    x_val = a3 * (y_val**3) + a2 * (y_val**2) + a1 * y_val + a0
-                                                    px = int(320.0 + x_val * 320.0 / 1000.0)
-                                                    py = int(480.0 - y_val * 480.0 / 3500.0)
-                                                    if 0 <= px < W and 0 <= py < Ho:
-                                                        pts_curve.append([px, py])
-
                                             if len(pts_curve) > 1:
                                                 pts_curve = np.array(pts_curve, dtype=np.int32)
                                                 cv2.polylines(img, [pts_curve], False, color, 3, cv2.LINE_AA)

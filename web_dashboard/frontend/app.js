@@ -779,7 +779,7 @@ function drawBEV(telemetry) {
             }
 
             // Draw waypoints
-            if (obj.waypoints && obj.waypoints.length > 0) {
+            if (obj.waypoints && obj.waypoints.length > 0 && (obj.label === 3 || obj.label === 4 || obj.label === 10)) {
                 obj.waypoints.forEach(wp => {
                     ctx.fillStyle = '#ffffff';
                     ctx.strokeStyle = color.replace('0.8', '1.0');
@@ -789,55 +789,16 @@ function drawBEV(telemetry) {
                     ctx.fill();
                     ctx.stroke();
                 });
-            }
-
-            // Draw fitted polynomial curve
-            if (obj.polynomial) {
-                const poly = obj.polynomial;
-                const a3 = poly.a3 || 0;
-                const a2 = poly.a2 || 0;
-                const a1 = poly.a1 || 0;
-                const a0 = poly.a0 || 0;
-
-                if (a3 !== 0 || a2 !== 0 || a1 !== 0 || a0 !== 0) {
-                    ctx.strokeStyle = color.replace('0.8', '1.0');
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    let first = true;
-
-                    if (obj.label === 10) {  // turn-lane: fitted as y(x)
-                        // Sweep X from -1000 to 1000 in steps of 50
-                        for (let x_val = -1000; x_val <= 1000; x_val += 50) {
-                            const y_val = a3 * Math.pow(x_val, 3) + a2 * Math.pow(x_val, 2) + a1 * x_val + a0;
-                            const cx = toCanvasX(x_val);
-                            const cy = toCanvasY(y_val);
-                            if (cx >= 0 && cx <= w && cy >= 0 && cy <= h) {
-                                if (first) {
-                                    ctx.moveTo(cx, cy);
-                                    first = false;
-                                } else {
-                                    ctx.lineTo(cx, cy);
-                                }
-                            }
-                        }
-                    } else {  // regular lanes: fitted as x(y)
-                        // Sweep Y from 0 to 3500 in steps of 100
-                        for (let y_val = 0; y_val <= 3500; y_val += 100) {
-                            const x_val = a3 * Math.pow(y_val, 3) + a2 * Math.pow(y_val, 2) + a1 * y_val + a0;
-                            const cx = toCanvasX(x_val);
-                            const cy = toCanvasY(y_val);
-                            if (cx >= 0 && cx <= w && cy >= 0 && cy <= h) {
-                                if (first) {
-                                    ctx.moveTo(cx, cy);
-                                    first = false;
-                                } else {
-                                    ctx.lineTo(cx, cy);
-                                }
-                            }
-                        }
-                    }
-                    ctx.stroke();
+            }            // Draw fitted polynomial curve by connecting the waypoints directly
+            if (obj.waypoints && obj.waypoints.length > 1 && (obj.label === 3 || obj.label === 4 || obj.label === 10)) {
+                ctx.strokeStyle = color.replace('0.8', '1.0');
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(obj.waypoints[0][0]), toCanvasY(obj.waypoints[0][1]));
+                for (let i = 1; i < obj.waypoints.length; i++) {
+                    ctx.lineTo(toCanvasX(obj.waypoints[i][0]), toCanvasY(obj.waypoints[i][1]));
                 }
+                ctx.stroke();
             }
         });
         

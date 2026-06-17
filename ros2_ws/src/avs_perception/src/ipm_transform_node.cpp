@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <cmath>
 #include <algorithm>
+#include <map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -300,6 +301,7 @@ private:
     }
 
     void telemetry_callback(const std_msgs::msg::String::SharedPtr msg) {
+        RCLCPP_INFO(this->get_logger(), "Received telemetry message! Length: %zu bytes", msg->data.size());
         // Periodically check/reload calibration file
         check_calibration_update();
 
@@ -378,7 +380,7 @@ private:
                                     }
                                 }
 
-                                if (!all_waypoints.empty()) {
+                                if (all_waypoints.size() >= 2) {
                                     std::sort(all_waypoints.begin(), all_waypoints.end(), [](const Waypoint& a, const Waypoint& b) {
                                         return a.x < b.x;
                                     });
@@ -392,21 +394,68 @@ private:
                                         }
                                     }
 
-                                    for (const auto& wp : unique_waypoints) {
+                                    // 1. Spatial smoothing of raw waypoints
+                                    if (unique_waypoints.size() >= 3) {
+                                        std::vector<Waypoint> smoothed = unique_waypoints;
+                                        for (size_t i = 1; i < unique_waypoints.size() - 1; ++i) {
+                                            smoothed[i].y = (unique_waypoints[i-1].y + unique_waypoints[i].y + unique_waypoints[i+1].y) / 3.0;
+                                        }
+                                        unique_waypoints = smoothed;
+                                    }
+
+                                    // 2. Fit raw polynomial
+                                    std::vector<double> coeffs = fit_polynomial_yx(unique_waypoints);
+
+                                    // 3. Temporal smoothing of coefficients
+                                    double alpha = 0.25;
+                                    if (has_prev_[label]) {
+                                        for (size_t c = 0; c < 4; ++c) {
+                                            coeffs[c] = alpha * coeffs[c] + (1.0 - alpha) * prev_coeffs_[label][c];
+                                        }
+                                    }
+                                    prev_coeffs_[label] = coeffs;
+                                    has_prev_[label] = true;
+
+                                    // 4. Regenerate smooth waypoints from the smoothed polynomial
+                                    double x_min = unique_waypoints.front().x;
+                                    double x_max = unique_waypoints.back().x;
+                                    std::vector<Waypoint> smooth_wps;
+                                    for (double x_val = x_min; x_val <= x_max; x_val += 100.0) {
+                                        double y_val = coeffs[0] * std::pow(x_val, 3) + coeffs[1] * std::pow(x_val, 2) + coeffs[2] * x_val + coeffs[3];
+                                        smooth_wps.push_back({x_val, y_val});
+                                    }
+                                    if (smooth_wps.empty() || std::abs(smooth_wps.back().x - x_max) > 1e-3) {
+                                        double y_val = coeffs[0] * std::pow(x_max, 3) + coeffs[1] * std::pow(x_max, 2) + coeffs[2] * x_max + coeffs[3];
+                                        smooth_wps.push_back({x_max, y_val});
+                                    }
+
+                                    // Write smooth waypoints to JSON
+                                    for (const auto& wp : smooth_wps) {
                                         double rx = std::round(wp.x * 10.0) / 10.0;
                                         double ry = std::round(wp.y * 10.0) / 10.0;
                                         obj["waypoints"].push_back({rx, ry});
                                     }
 
-                                    std::vector<double> coeffs = fit_polynomial_yx(unique_waypoints);
+                                    // Write smooth polynomial coefficients to JSON
                                     obj["polynomial"]["a3"] = coeffs[0];
                                     obj["polynomial"]["a2"] = coeffs[1];
                                     obj["polynomial"]["a1"] = coeffs[2];
                                     obj["polynomial"]["a0"] = coeffs[3];
 
+                                    // 5. Smooth and write control outputs
                                     double longitudinal_offset = coeffs[3];
                                     double heading_angle = std::atan(coeffs[2]);
                                     double curvature = 2.0 * coeffs[1];
+
+                                    if (has_prev_metrics_[label]) {
+                                        longitudinal_offset = alpha * longitudinal_offset + (1.0 - alpha) * prev_longitudinal_offset_[label];
+                                        heading_angle = alpha * heading_angle + (1.0 - alpha) * prev_heading_angle_[label];
+                                        curvature = alpha * curvature + (1.0 - alpha) * prev_curvature_[label];
+                                    }
+                                    prev_longitudinal_offset_[label] = longitudinal_offset;
+                                    prev_heading_angle_[label] = heading_angle;
+                                    prev_curvature_[label] = curvature;
+                                    has_prev_metrics_[label] = true;
 
                                     obj["lateral_offset_mm"] = 0.0;
                                     obj["longitudinal_offset_mm"] = std::round(longitudinal_offset * 10.0) / 10.0;
@@ -428,7 +477,7 @@ private:
                                     }
                                 }
 
-                                if (!all_waypoints.empty()) {
+                                if (all_waypoints.size() >= 2) {
                                     std::sort(all_waypoints.begin(), all_waypoints.end(), [](const Waypoint& a, const Waypoint& b) {
                                         return a.y < b.y;
                                     });
@@ -442,21 +491,68 @@ private:
                                         }
                                     }
 
-                                    for (const auto& wp : unique_waypoints) {
+                                    // 1. Spatial smoothing of raw waypoints
+                                    if (unique_waypoints.size() >= 3) {
+                                        std::vector<Waypoint> smoothed = unique_waypoints;
+                                        for (size_t i = 1; i < unique_waypoints.size() - 1; ++i) {
+                                            smoothed[i].x = (unique_waypoints[i-1].x + unique_waypoints[i].x + unique_waypoints[i+1].x) / 3.0;
+                                        }
+                                        unique_waypoints = smoothed;
+                                    }
+
+                                    // 2. Fit raw polynomial
+                                    std::vector<double> coeffs = fit_polynomial_xy(unique_waypoints);
+
+                                    // 3. Temporal smoothing of coefficients
+                                    double alpha = 0.25;
+                                    if (has_prev_[label]) {
+                                        for (size_t c = 0; c < 4; ++c) {
+                                            coeffs[c] = alpha * coeffs[c] + (1.0 - alpha) * prev_coeffs_[label][c];
+                                        }
+                                    }
+                                    prev_coeffs_[label] = coeffs;
+                                    has_prev_[label] = true;
+
+                                    // 4. Regenerate smooth waypoints from the smoothed polynomial
+                                    double y_min = unique_waypoints.front().y;
+                                    double y_max = unique_waypoints.back().y;
+                                    std::vector<Waypoint> smooth_wps;
+                                    for (double y_val = y_min; y_val <= y_max; y_val += 100.0) {
+                                        double x_val = coeffs[0] * std::pow(y_val, 3) + coeffs[1] * std::pow(y_val, 2) + coeffs[2] * y_val + coeffs[3];
+                                        smooth_wps.push_back({x_val, y_val});
+                                    }
+                                    if (smooth_wps.empty() || std::abs(smooth_wps.back().y - y_max) > 1e-3) {
+                                        double x_val = coeffs[0] * std::pow(y_max, 3) + coeffs[1] * std::pow(y_max, 2) + coeffs[2] * y_max + coeffs[3];
+                                        smooth_wps.push_back({x_val, y_max});
+                                    }
+
+                                    // Write smooth waypoints to JSON
+                                    for (const auto& wp : smooth_wps) {
                                         double rx = std::round(wp.x * 10.0) / 10.0;
                                         double ry = std::round(wp.y * 10.0) / 10.0;
                                         obj["waypoints"].push_back({rx, ry});
                                     }
 
-                                    std::vector<double> coeffs = fit_polynomial_xy(unique_waypoints);
+                                    // Write smooth polynomial coefficients to JSON
                                     obj["polynomial"]["a3"] = coeffs[0];
                                     obj["polynomial"]["a2"] = coeffs[1];
                                     obj["polynomial"]["a1"] = coeffs[2];
                                     obj["polynomial"]["a0"] = coeffs[3];
 
+                                    // 5. Smooth and write control outputs
                                     double lateral_offset = coeffs[3];
                                     double heading_angle = std::atan(coeffs[2]);
                                     double curvature = 2.0 * coeffs[1];
+
+                                    if (has_prev_metrics_[label]) {
+                                        lateral_offset = alpha * lateral_offset + (1.0 - alpha) * prev_lateral_offset_[label];
+                                        heading_angle = alpha * heading_angle + (1.0 - alpha) * prev_heading_angle_[label];
+                                        curvature = alpha * curvature + (1.0 - alpha) * prev_curvature_[label];
+                                    }
+                                    prev_lateral_offset_[label] = lateral_offset;
+                                    prev_heading_angle_[label] = heading_angle;
+                                    prev_curvature_[label] = curvature;
+                                    has_prev_metrics_[label] = true;
 
                                     obj["lateral_offset_mm"] = std::round(lateral_offset * 10.0) / 10.0;
                                     obj["longitudinal_offset_mm"] = 0.0;
@@ -473,6 +569,7 @@ private:
             std_msgs::msg::String out_msg;
             out_msg.data = telemetry.dump();
             telemetry_realworld_pub_->publish(out_msg);
+            RCLCPP_INFO(this->get_logger(), "Published real-world telemetry! Size: %zu bytes", out_msg.data.size());
 
         } catch (const std::exception& e) {
             RCLCPP_ERROR(this->get_logger(), "Error processing telemetry: %s", e.what());
@@ -489,6 +586,15 @@ private:
 
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr telemetry_realworld_pub_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr telemetry_sub_;
+
+    // Temporal smoothing memory (Label -> previous values)
+    std::map<int, std::vector<double>> prev_coeffs_;
+    std::map<int, double> prev_lateral_offset_;
+    std::map<int, double> prev_longitudinal_offset_;
+    std::map<int, double> prev_heading_angle_;
+    std::map<int, double> prev_curvature_;
+    std::map<int, bool> has_prev_;
+    std::map<int, bool> has_prev_metrics_;
 };
 
 int main(int argc, char* argv[]) {

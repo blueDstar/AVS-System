@@ -55,6 +55,7 @@ public:
 
 private:
     void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
+        RCLCPP_INFO(this->get_logger(), "Received image frame! Timestamp: %u.%u", msg->header.stamp.sec, msg->header.stamp.nanosec);
         auto start_time = std::chrono::high_resolution_clock::now();
 
         // Update parameters dynamically from standard parameter service
@@ -153,6 +154,7 @@ private:
         auto telemetry_msg = std_msgs::msg::String();
         telemetry_msg.data = json_str;
         telemetry_pub_->publish(telemetry_msg);
+        RCLCPP_INFO(this->get_logger(), "Published telemetry! Size: %zu bytes", json_str.size());
     }
 
     std::unique_ptr<YOLO26Seg> yolo_;
