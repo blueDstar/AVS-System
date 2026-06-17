@@ -1,10 +1,10 @@
-# Lý Thuyết: Chuyển Đổi Tọa Độ Pixel → Tọa Độ Thực Bằng Homography
+# Lý Thuyết: Trích Xuất Waypoints Làn Đường Qua Homography
 
 ## 1. Bài Toán
 
 Camera gắn trên xe nhìn xuống đường. Ảnh camera bị **méo phối cảnh** (perspective distortion): vật ở xa trông nhỏ hơn vật ở gần, các đường song song hội tụ về 1 điểm.
 
-**Mục tiêu:** Chuyển tọa độ pixel `(u, v)` trên ảnh camera thành tọa độ thực `(X_mm, Y_mm)` trên mặt đường, đơn vị milimet.
+**Mục tiêu:** Chuyển tọa độ pixel `(u, v)` trên ảnh camera thành tọa độ thực `(X_mm, Y_mm)` trên mặt đường, đơn vị milimet, phục vụ trích xuất waypoints và fit polynomial làn đường cho bộ điều khiển xe.
 
 ---
 
@@ -26,7 +26,7 @@ Trong đó:
   (u, v)       = tọa độ pixel trên ảnh camera
   (X_mm, Y_mm) = tọa độ thực trên mặt đường (mm)
   s            = hệ số tỉ lệ (tính tự động)
-  H            = ma trận homography 3×3
+  H            = ma trận homography 3x3
 ```
 
 Sau khi nhân ma trận:
@@ -46,23 +46,23 @@ Ma trận H có 8 ẩn số (h33 chuẩn hóa = 1). Cần tối thiểu **4 cặ
 Đặt một vật hình chữ nhật (kích thước đã biết) trên mặt đường, trước camera:
 
 ```
-Ảnh camera (pixel):                Mặt đường thực (mm):
-                                   
-    P1●───────●P2                  P1●───────────●P2
-     \         /                   │              │
-      \       /     ──────→        │              │
-       \     /       H             │              │
-    P4●───────●P3                  P4●───────────●P3
+Anh camera (pixel):                Mat duong thuc (mm):
 
-  Hình thang (do phối cảnh)        Hình chữ nhật (kích thước thực)
+    P1o---------oP2                P1o-----------oP2
+     \           /                 |              |
+      \         /     -------->    |              |
+       \       /        H          |              |
+    P4o---------oP3                P4o-----------oP3
+
+  Hinh thang (do phoi canh)        Hinh chu nhat (kich thuoc thuc)
 ```
 
 | Điểm | Pixel (u, v) | Thực (X_mm, Y_mm) |
 |------|-------------|-------------------|
-| P1 | (185, 120) | (0, 0) |
-| P2 | (455, 120) | (297, 0) |
-| P3 | (410, 350) | (297, 210) |
-| P4 | (230, 350) | (0, 210) |
+| P1 | (185, 120) | (-150, 1000) |
+| P2 | (455, 120) | (150, 1000) |
+| P3 | (410, 350) | (150, 500) |
+| P4 | (230, 350) | (-150, 500) |
 
 OpenCV tính H từ 4 cặp điểm này:
 ```cpp
@@ -74,128 +74,170 @@ Mat H = getPerspectiveTransform(src_points, dst_points);
 ## 4. Hệ Tọa Độ Thực (Vehicle-Centric)
 
 ```
-      Y (mm) — hướng trước xe (dọc / longitudinal)
-      ↑
-      │
-      │    ← làn đường trải dài theo Y
-      │
-      O────────→ X (mm) — sang phải (ngang / lateral)
+      Y (mm) — huong truoc xe (doc / longitudinal)
+      ^
+      |    <- lan duong trai dai theo Y
+      |
+      O----------> X (mm) — sang phai (ngang / lateral)
     (0,0)
-    = điểm chiếu camera xuống mặt đường
+    = diem chieu camera xuong mat duong / dau xe
 ```
 
 - **X (mm):** Độ lệch ngang (lateral offset). X > 0 = sang phải, X < 0 = sang trái.
 - **Y (mm):** Khoảng cách phía trước xe (longitudinal). Y > 0 = phía trước.
 
+### Phạm vi tọa độ thực tế trong hệ thống:
+
+| Trục | Phạm vi | Ý nghĩa |
+|------|---------|---------|
+| **X** | -1000mm đến +1000mm | Chiều ngang tối đa 2 mét |
+| **Y** | 0mm đến 3500mm | Tầm nhìn phía trước tối đa 3.5 mét |
+
 ---
 
-## 5. Fit Đa Thức Bậc 3
+## 5. Trích Xuất Waypoints Từ Polygon Phân Đoạn
 
-Sau khi chuyển contour làn đường từ pixel sang mm, ta có tập điểm `{(Xᵢ, Yᵢ)}` cho mỗi làn.
+Segmentation model cho ra **polygon contour** của từng làn đường (`main-lane`, `other-lane`, `turn-lane`). Để fit polynomial, cần trích xuất **đường trung tâm (centerline)** trong tọa độ thực.
 
-Vì làn đường trải dài theo trục **Y (dọc)**, ta biểu diễn vị trí ngang **X** theo hàm của **Y**:
+### Phương pháp: Ray-casting Intersection (Scan Line)
 
+Hệ thống hoạt động trực tiếp trên **polygon real-world** sau khi đã transform qua H (không quét pixel mask từng hàng).
+
+#### 5.1 Chuyển polygon pixel → tọa độ mm
+
+Với mỗi điểm `(u, v)` trong polygon:
 ```
-x(y) = a₃·y³ + a₂·y² + a₁·y + a₀
+w = h31·u + h32·v + h33
+X = (h11·u + h12·v + h13) / w
+Y = (h21·u + h22·v + h23) / w
+```
+Điều kiện: `|w| > 1e-6` (tránh chia cho 0). Kết quả được làm tròn đến 0.1mm.
+
+#### 5.2 Quét dọc (Y-sweep) — cho main-lane / other-lane
+
+Làn đường thẳng trải dài theo Y. Với mỗi mức Y (bước 100mm):
+```
+Tai Y = y_i, tim tat ca X giao voi canh polygon:
+  - Voi moi canh (p1->p2):
+    neu y1 <= y_i <= y2 (hoac y2 <= y_i <= y1):
+      X_intersect = x1 + (y_i - y1) * (x2 - x1) / (y2 - y1)
+  - X_center = (X_min + X_max) / 2
+  -> waypoint: (X_center, y_i)
 ```
 
-### Ý nghĩa các hệ số tại vị trí xe (y = 0):
+#### 5.3 Quét ngang (X-sweep) — cho turn-lane
+
+Làn rẽ trải dài theo X. Với mỗi mức X (bước 100mm):
+```
+Tai X = x_i, tim tat ca Y giao voi canh polygon:
+  - Y_center = (Y_min + Y_max) / 2
+  -> waypoint: (x_i, Y_center)
+```
+
+---
+
+## 6. Fit Đa Thức Bậc 3
+
+### 6.1 Polynomial x(y) — main-lane / other-lane
+
+Làn đường thẳng: biểu diễn X ngang theo hàm của Y dọc:
+```
+x(y) = a3·y^3 + a2·y^2 + a1·y + a0
+```
+
+### 6.2 Polynomial y(x) — turn-lane
+
+Làn rẽ: biểu diễn Y theo X:
+```
+y(x) = a3·x^3 + a2·x^2 + a1·x + a0
+```
+
+### Ý nghĩa các hệ số tại vị trí xe (tại t = 0):
 
 | Hệ số | Ý nghĩa | Công thức |
 |-------|---------|-----------|
-| **a₀** | **Lateral offset** — Độ lệch ngang so với làn (mm) | `x(0) = a₀` |
-| **a₁** | **Heading angle** — Góc giữa hướng xe và đường cong (rad) | `ψ = arctan(a₁)` |
-| **a₂** | **Curvature** — Độ cong của đường tại vị trí xe (1/mm) | `κ = 2·a₂` |
-| **a₃** | **Rate of curvature change** — Tốc độ thay đổi độ cong | Dùng cho dự đoán xa |
+| **a0** | **Lateral offset** — Độ lệch ngang tại gốc (mm) | `x(0) = a0` |
+| **a1** | **Heading angle** — Góc giữa hướng xe và đường (rad) | `psi = arctan(a1)` |
+| **a2** | **Curvature** — Độ cong tại vị trí xe (1/mm) | `kappa = 2·a2` |
+| **a3** | **Rate of curvature change** | Dùng cho dự đoán xa |
 
-### Minh họa trực quan:
+### 6.3 Phương pháp Least Squares (SVD)
 
-```
-      Y (mm)
-      ↑
-      │         ╱ ← đường cong thực tế
-      │        ╱
-      │       ╱
-      │      │
-      │     │
-      │    │ 
-      O──│──────→ X (mm)
-         │
-         ← a₀ = lateral offset (khoảng cách ngang tại y=0)
-         
-         ψ = arctan(a₁) = góc tiếp tuyến tại y=0
-```
-
----
-
-## 6. Phương Pháp Fit: Least Squares
-
-Cho N điểm `{(Xᵢ, Yᵢ)}`, tìm `[a₃, a₂, a₁, a₀]` sao cho tổng bình phương sai số nhỏ nhất:
+Cho N điểm `{(ti, si)}`, tìm `[a3, a2, a1, a0]` sao cho tổng bình phương sai số nhỏ nhất. Viết dưới dạng ma trận `A · c = b`:
 
 ```
-minimize Σᵢ (Xᵢ - a₃·Yᵢ³ - a₂·Yᵢ² - a₁·Yᵢ - a₀)²
+    [ t1^3  t1^2  t1  1 ]       [ a3 ]       [ s1 ]
+A = | t2^3  t2^2  t2  1 |,  c = | a2 |,  b = | s2 |
+    |  :     :    :   : |       | a1 |       |  : |
+    [ tn^3  tn^2  tn  1 ]       [ a0 ]       [ sn ]
 ```
 
-Viết dưới dạng ma trận: **A · c = b**
-
-```
-    ┌ Y₁³  Y₁²  Y₁  1 ┐       ┌ a₃ ┐       ┌ X₁ ┐
-A = │ Y₂³  Y₂²  Y₂  1 │,  c = │ a₂ │,  b = │ X₂ │
-    │  ⋮    ⋮    ⋮   ⋮ │       │ a₁ │       │  ⋮ │
-    └ Yₙ³  Yₙ²  Yₙ  1 ┘       └ a₀ ┘       └ Xₙ ┘
-```
-
-Nghiệm: `c = (AᵀA)⁻¹ · Aᵀ · b`
-
-Trong OpenCV C++:
+Dùng **SVD** (Singular Value Decomposition) — ổn định hơn QR với dữ liệu thực tế nhiễu:
 ```cpp
-cv::Mat A(N, 4, CV_64F);
-cv::Mat b(N, 1, CV_64F);
-for (int i = 0; i < N; i++) {
-    double y = points[i].y;
-    A.at<double>(i, 0) = y*y*y;
-    A.at<double>(i, 1) = y*y;
-    A.at<double>(i, 2) = y;
-    A.at<double>(i, 3) = 1.0;
-    b.at<double>(i, 0) = points[i].x;
-}
-cv::Mat coeffs;
-cv::solve(A, b, coeffs, cv::DECOMP_QR);
-// coeffs = [a3, a2, a1, a0]
+cv::solve(A, b, coeffs, cv::DECOMP_SVD);
+```
+
+Fallback khi ít hơn 4 điểm (dùng bậc 1 thay vì bậc 3):
+```cpp
+cv::solve(A_2col, b, coeffs, cv::DECOMP_SVD);  // chi a1, a0
 ```
 
 ---
 
-## 7. Trích Xuất Centerline Từ Mask Phân Đoạn
+## 7. Spatial & Temporal Smoothing
 
-Segmentation mask cho ra **vùng diện tích** của làn đường (main-lane, other-lane, turn-lane). Để fit polynomial, cần trích xuất **đường trung tâm (centerline)**.
+### 7.1 Spatial Smoothing (3-point moving average)
 
-### Phương pháp: Midpoint Extraction
-
+Trước khi fit polynomial, làm mượt waypoints thô để giảm nhiễu từ contour polygon:
 ```
-Mask làn đường tại mỗi hàng pixel (row):
-
-Row 100: ....████████....    → leftmost=50, rightmost=110 → center=80
-Row 120: ...██████████...    → leftmost=45, rightmost=115 → center=80
-Row 140: ..████████████..    → leftmost=40, rightmost=120 → center=80
-Row 160: .██████████████.    → leftmost=35, rightmost=125 → center=80
+smoothed[i].s = (raw[i-1].s + raw[i].s + raw[i+1].s) / 3
 ```
+Áp dụng cho các điểm nội, giữ nguyên endpoint.
 
-Cho mỗi hàng `v` có pixel thuộc mask, lấy trung bình X:
+### 7.2 Temporal Smoothing (EMA — Exponential Moving Average)
+
+Sau khi fit polynomial, áp dụng EMA trên các hệ số qua các frame liên tiếp:
 ```
-center_u = (leftmost_u + rightmost_u) / 2
-→ Điểm centerline: (center_u, v) trong pixel
-→ Transform qua H: (X_mm, Y_mm) trong mm
+coeff[t] = alpha * coeff_raw[t] + (1 - alpha) * coeff[t-1]
+```
+Với `alpha = 0.25` (25% frame mới, 75% lịch sử) — làm mượt đường cong, giảm rung lắc đột ngột.
+
+Tương tự cho control metrics:
+```
+lateral_offset  = alpha * lateral_offset  + (1-alpha) * prev_lateral_offset
+heading_angle   = alpha * heading_angle   + (1-alpha) * prev_heading_angle
+curvature       = alpha * curvature       + (1-alpha) * prev_curvature
 ```
 
 ---
 
-## 8. Giả Định & Hạn Chế
+## 8. Regenerate Waypoints Từ Polynomial Đã Làm Mượt
+
+Sau khi có polynomial đã temporal-smooth, **tái tạo lại waypoints** từ polynomial để đảm bảo đường cong mượt và nhất quán (không dùng waypoints thô ban đầu):
+
+```
+Voi main-lane / other-lane (sweep Y, buoc 100mm):
+  x_val = a3·y^3 + a2·y^2 + a1·y + a0
+  -> smooth_waypoint: (x_val, y)
+
+Voi turn-lane (sweep X, buoc 100mm):
+  y_val = a3·x^3 + a2·x^2 + a1·x + a0
+  -> smooth_waypoint: (x, y_val)
+```
+
+Những waypoints mượt này được publish lên `/avs/telemetry_realworld` để:
+- **BEV Canvas** (frontend) hiển thị đường cong polyline màu theo class
+- **Bộ điều khiển** downstream sử dụng `lateral_offset_mm`, `heading_angle_rad`, `curvature_inv_mm`
+
+---
+
+## 9. Giả Định & Hạn Chế
 
 | Giả định | Hệ quả |
 |----------|--------|
-| Mặt đường phẳng | Nếu mặt đường có độ dốc hoặc gồ ghề, tọa độ mm sẽ bị sai |
+| Mặt đường phẳng | Nếu mặt đường có độ dốc, tọa độ mm sẽ bị sai |
 | Camera cố định trên xe | Nếu camera bị xê dịch, cần calibrate lại |
-| Vùng nhìn thấy hữu hạn | Polynomial chỉ chính xác trong phạm vi camera nhìn thấy |
+| Vùng nhìn thấy hữu hạn | Polynomial chỉ chính xác trong phạm vi camera (~3.5m) |
+| Polygon đủ lớn | Làn bị che khuất một phần → ít waypoints → polynomial kém chính xác |
 
 Với dự án hiện tại (băng rôn in trên sàn phẳng), tất cả giả định đều thỏa mãn.
