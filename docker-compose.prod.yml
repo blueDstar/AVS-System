@@ -17,7 +17,7 @@ services:
       - ROS_DOMAIN_ID=0
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
-    command: bash -c "rm -f /workspace/ros2_ws/build_complete && cd /workspace/ros2_ws && rm -rf build install log && colcon build --symlink-install && touch /workspace/ros2_ws/build_complete && source install/setup.bash && (ros2 run avs_perception ncnn_inference_node & ros2 run avs_perception ipm_transform_node)"
+    command: bash -c "cd /workspace/ros2_ws && rm -rf build install log && colcon build --symlink-install && source install/setup.bash && (ros2 run avs_perception ncnn_inference_node & ros2 run avs_perception ipm_transform_node)"
 
   video_publisher:
     image: avs_perception:arm64
@@ -32,7 +32,7 @@ services:
       - ./config:/workspace/config
     environment:
       - ROS_DOMAIN_ID=0
-    command: bash -c "sleep 3 && while [ ! -f /workspace/ros2_ws/build_complete ]; do echo 'Waiting for build completion...'; sleep 2; done && cd /workspace/ros2_ws && source install/setup.bash && ros2 run avs_perception video_publisher_node"
+    command: bash -c "while [ -f /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node ]; do echo 'Waiting for old build to be cleared...'; sleep 1; done && while [ ! -f /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node ]; do echo 'Waiting for video_publisher_node compilation...'; sleep 2; done && cd /workspace/ros2_ws && source install/setup.bash && ros2 run avs_perception video_publisher_node"
 
   web_dashboard:
     image: avs_perception:arm64

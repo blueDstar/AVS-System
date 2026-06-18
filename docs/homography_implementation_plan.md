@@ -1,56 +1,50 @@
-# Kế Hoạch Triển Khai: Extract Line — Pixel → Tọa Độ Thực (Homography + Waypoints)
+# Kế Hoạch Triển Khai: Pixel → Tọa Độ Thực (Homography IPM)
 
-## 1. Tổng Quan Kiến Trúc Đã Triển Khai
+## 1. Tổng Quan Kiến Trúc
 
 ```
-+------------------------------------------------------------------+
-|                    LAPTOP (Acer Nitro 5)                         |
-|                                                                  |
-|  +--------------------------------------+                        |
-|  |  Web Dashboard (http://localhost:8000)|                       |
-|  |                                      |                        |
-|  |  [Stream Normal] [Settings]          |                        |
-|  |  [BEV Canvas]  [Calibration Modal]   |                        |
-|  |                                      |                        |
-|  |  Calibration Modal:                  |                        |
-|  |  - Hiển thị 1 frame camera tĩnh      |                        |
-|  |  - Click 4 điểm trên ảnh            |                        |
-|  |  - Nhập tọa độ thực (mm)            |                        |
-|  |  - POST /api/calibration             |                        |
-|  |  - Tính H → lưu calibration.json    |                        |
-|  +------------------+-------------------+                        |
-|                     |                                            |
-|  +------------------v-------------------+                        |
-|  |  FastAPI Backend (main.py)           |                        |
-|  |  - Tính H = getPerspectiveTransform  |                        |
-|  |  - Lưu H vào config/calibration.json|                        |
-|  |  - Stream /api/stream (normal view)  |                        |
-|  |  - WebSocket /ws → push telemetry   |                        |
-|  +--------------------------------------+                        |
-+------------------------------------------------------------------+
-                        |
+┌─────────────────────────────────────────────────────────────────┐
+│                    LAPTOP (Acer Nitro 5)                        │
+│                                                                 │
+│  ┌─────────────────────────────────────┐                        │
+│  │  Web Dashboard (http://localhost:8000)│                       │
+│  │                                     │                        │
+│  │  [Stream] [Settings] [Calibration]  │ ← nút mới             │
+│  │                                     │                        │
+│  │  Chế độ Calibration:                │                        │
+│  │  - Hiển thị 1 frame camera          │                        │
+│  │  - Click 4 điểm trên ảnh           │                        │
+│  │  - Nhập tọa độ thực (mm)           │                        │
+│  │  - Tính ma trận H                  │                        │
+│  │  - Gửi H → config/calibration.json │                        │
+│  └────────────────┬────────────────────┘                        │
+│                   │ API: POST /api/calibration                  │
+│  ┌────────────────▼────────────────────┐                        │
+│  │  FastAPI Backend (main.py)          │                        │
+│  │  - Nhận 4 cặp điểm (pixel, mm)     │                        │
+│  │  - Tính H = getPerspectiveTransform │                        │
+│  │  - Lưu H vào config/calibration.json│                        │
+│  └─────────────────────────────────────┘                        │
+└─────────────────────────────────────────────────────────────────┘
+                        │
           config/calibration.json (volume-mounted)
-                        |
-+-------------------v----------------------------------------------+
-|                  RASPBERRY PI 5                                  |
-|                                                                  |
-|  +---------------+   +-----------------+   +------------------+ |
-|  |video_publisher|-->|ncnn_inference   |-->|ipm_transform_node| |
-|  |_node          |   |_node            |   |(C++)             | |
-|  |               |   |                 |   |                  | |
-|  | /camera/      |   | /avs/telemetry  |   |Đọc calibration   | |
-|  |  image_raw/   |   | (JSON + polygons|   |.json             | |
-|  |  compressed   |   |  pixel coords)  |   |Transform pixel   | |
-|  +---------------+   +-----------------+   |-> mm (H matrix)  | |
-|                                            |Extract centerline| |
-|                                            |Fit polynomial    | |
-|                                            |Smooth (EMA)      | |
-|                                            |                  | |
-|                                            | /avs/            | |
-|                                            |  telemetry_      | |
-|                                            |  realworld       | |
-|                                            +------------------+ |
-+------------------------------------------------------------------+
+                        │
+┌───────────────────────▼─────────────────────────────────────────┐
+│                  RASPBERRY PI 5                                  │
+│                                                                  │
+│  ┌────────────────┐    ┌──────────────────┐    ┌──────────────┐ │
+│  │video_publisher  │───→│ncnn_inference    │───→│lane_transform│ │
+│  │_node            │    │_node             │    │_node (MỚI)   │ │
+│  │                 │    │                  │    │              │ │
+│  │ /camera/        │    │ /avs/telemetry   │    │Đọc calib.json│ │
+│  │  image_raw      │    │ (JSON + polygons)│    │Transform H   │ │
+│  └────────────────┘    └──────────────────┘    │Fit polynomial│ │
+│                                                 │Publish model │ │
+│                                                 │              │ │
+│                                                 │ /avs/        │ │
+│                                                 │  lane_model  │ │
+│                                                 └──────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -58,77 +52,85 @@
 ## 2. Hệ Tọa Độ
 
 ```
-      Y (mm) — huong truoc xe (doc / longitudinal)
-      ^
-      |
-      O----------> X (mm) — sang phai (ngang / lateral)
-    (0,0) = dau xe / diem chieu camera
+      Y (mm) — hướng trước xe (dọc / longitudinal)
+      ↑
+      │
+      O────────→ X (mm) — sang phải (ngang / lateral)
+    (0,0)
 ```
 
-| Trục | Phạm vi | Ý nghĩa |
-|------|---------|---------|
-| X | -1000mm ~ +1000mm | Chiều ngang 2m |
-| Y | 0mm ~ 3500mm | Tầm nhìn phía trước 3.5m |
+- **X dương:** sang phải so với xe
+- **Y dương:** phía trước xe
+- **Gốc (0,0):** điểm chiếu camera xuống mặt đường
 
 ---
 
-## 3. Các Thành Phần Đã Triển Khai
+## 3. Các Thành Phần Cần Triển Khai
 
-### 3.1 Frontend — Calibration Modal (Web Dashboard)
+### 3.1 Frontend — Chế Độ Calibration (Web Dashboard)
 
-**File:** `web_dashboard/frontend/index.html` + `app.js` + `style.css`
+**File cần sửa:** `web_dashboard/frontend/index.html` (và CSS/JS liên quan)
 
-**Chức năng đã hoàn thành:**
-- Nút **[Calibrate]** trên thanh điều khiển → mở modal calibration
-- Hiển thị **1 frame tĩnh** từ camera (API `GET /api/calibration/frame`)
-- Người dùng **click 4 điểm** trên ảnh → vẽ dấu chấm màu + số thứ tự theo chiều kim đồng hồ từ trái-trên
-- Mỗi điểm: nhập tọa độ thực **(X_mm, Y_mm)** qua ô input (giá trị mặc định hợp lý)
-- Nút **[Save Calibration]** → gửi POST `/api/calibration` → hiển thị trạng thái "CALIBRATED"
-- Nút **[Clear Points]** → reset các điểm đã chọn
+**Chức năng:**
+1. Thêm nút **[Calibration]** trên thanh điều khiển
+2. Khi bấm, chuyển sang chế độ calibration:
+   - Hiển thị **1 frame tĩnh** (freeze frame) từ camera stream
+   - Người dùng **click 4 điểm** trên ảnh → hiển thị dấu chấm + số thứ tự
+   - Mỗi điểm: nhập tọa độ thực **(X_mm, Y_mm)** qua ô input
+   - Nút **[Tính & Lưu]** → gửi dữ liệu lên backend
+   - Hiển thị kết quả: "Calibration thành công" hoặc lỗi
 
-**Tọa độ pixel được tính theo kích thước ảnh gốc:**
-```javascript
-const u = Math.round((e.clientX - rect.left) * (imgW / rect.width));
-const v = Math.round((e.clientY - rect.top) * (imgH / rect.height));
-```
-
-**BEV Canvas (Real-World Bird's Eye View):**
-- Canvas 280×350 px, hiển thị tọa độ thực theo thời gian thực qua WebSocket
-- Mapping: `toCanvasX(X) = w/2 + X * (w/2000)`, `toCanvasY(Y) = h - Y * (h/3500)`
-- Vẽ grid 500mm, vehicle shape ở gốc, polygon_real_world, waypoints, polyline curve
-- Màu sắc theo class (main-lane: xanh lá, other-lane: đỏ, turn-lane: tím...)
-
-**Lưu ý:** IPM Warp stream view đã bị **xóa** — chỉ còn Normal stream view. BEV canvas là cách xem tọa độ thực.
+**Lưu ý UI:**
+- Tọa độ pixel được lấy dựa trên kích thước ảnh gốc (640×480), không phải kích thước hiển thị trên trình duyệt
+- Cần tính tỉ lệ: `pixel_x = click_x * (640 / display_width)`
 
 ---
 
 ### 3.2 Backend — API Calibration (FastAPI)
 
-**File:** `web_dashboard/backend/main.py`
+**File cần sửa:** `web_dashboard/backend/main.py`
 
-**API đã hoàn thành:**
+**API mới:**
 
 ```
 POST /api/calibration
 Body: {
-    "pixel_points": [[u1,v1], [u2,v2], [u3,v3], [u4,v4]],
-    "world_points": [[x1,y1], [x2,y2], [x3,y3], [x4,y4]],
-    "image_size": [640, 480]
+    "points": [
+        {"pixel": [u1, v1], "world": [x1_mm, y1_mm]},
+        {"pixel": [u2, v2], "world": [x2_mm, y2_mm]},
+        {"pixel": [u3, v3], "world": [x3_mm, y3_mm]},
+        {"pixel": [u4, v4], "world": [x4_mm, y4_mm]}
+    ]
 }
 Response: {
     "status": "success",
     "homography_matrix": [[h11,h12,h13],[h21,h22,h23],[h31,h32,h33]]
 }
-
-GET /api/calibration          -> Trả về calibration.json hiện tại
-GET /api/calibration/frame    -> Trả về 1 frame JPEG tĩnh để calibrate
 ```
 
-**Logic tính H:**
+**Logic:**
 ```python
-src = np.float32(pixel_points)
-dst = np.float32(world_points)
-H = cv2.getPerspectiveTransform(src, dst)  # 3x3 matrix
+import numpy as np
+import cv2
+
+src = np.float32([[u1,v1], [u2,v2], [u3,v3], [u4,v4]])
+dst = np.float32([[x1,y1], [x2,y2], [x3,y3], [x4,y4]])
+H = cv2.getPerspectiveTransform(src, dst)
+
+# Lưu vào config/calibration.json
+{
+    "homography_matrix": H.tolist(),
+    "src_points_pixel": src.tolist(),
+    "dst_points_mm": dst.tolist(),
+    "image_size": [640, 480],
+    "calibrated_at": "2026-06-10T21:00:00"
+}
+```
+
+**API bổ sung:**
+```
+GET /api/calibration        → Trả về calibration hiện tại (nếu có)
+GET /api/calibration/frame  → Trả về 1 frame JPEG tĩnh để hiển thị khi calibrate
 ```
 
 ---
@@ -138,247 +140,152 @@ H = cv2.getPerspectiveTransform(src, dst)  # 3x3 matrix
 ```json
 {
     "homography_matrix": [
-        [h11, h12, h13],
-        [h21, h22, h23],
-        [h31, h32, h33]
+        [0.85, -0.02, -120.5],
+        [0.01,  1.65, -180.0],
+        [0.00001, 0.0008, 1.0]
     ],
-    "pixel_points": [[u1,v1], [u2,v2], [u3,v3], [u4,v4]],
-    "world_points": [[x1,y1], [x2,y2], [x3,y3], [x4,y4]],
+    "src_points_pixel": [[185,120], [455,120], [410,350], [230,350]],
+    "dst_points_mm": [[0,0], [297,0], [297,210], [0,210]],
     "image_size": [640, 480],
-    "calibrated_at": "2026-06-17T..."
+    "calibrated_at": "2026-06-10T21:00:00"
 }
 ```
 
-File nằm trong folder `config/` được volume-mount trong Docker → `ipm_transform_node` trên Pi đọc trực tiếp. Node tự động **reload** khi file thay đổi (so sánh `last_write_time`).
+File này nằm trong folder `config/` đã được volume-mount trong Docker → Pi đọc được trực tiếp.
 
 ---
 
-### 3.4 ROS2 Node — `ipm_transform_node` (C++)
+### 3.4 ROS2 Node Mới — `lane_transform_node` (C++)
 
-**File:** `ros2_ws/src/avs_perception/src/ipm_transform_node.cpp`
+**File mới:** `ros2_ws/src/avs_perception/src/lane_transform_node.cpp`
 
-**Subscribe:** `/avs/telemetry` (std_msgs/String — JSON chứa pixel polygons từ ncnn_inference_node)
+**Subscribe:** `/avs/telemetry` (std_msgs/String — JSON chứa polygons)
 
-**Publish:** `/avs/telemetry_realworld` (std_msgs/String — JSON bổ sung real-world coords + waypoints + polynomial)
+**Publish:** `/avs/lane_model` (std_msgs/String — JSON chứa polynomial + offset + heading)
 
-#### Pipeline xử lý mỗi frame:
+**Logic xử lý mỗi frame:**
 
-**Bước 1 — Load & auto-reload calibration:**
-```cpp
-void check_calibration_update() {
-    auto current_write_time = filesystem::last_write_time(calibration_file_path_);
-    if (!has_calibration_ || current_write_time != last_write_time_)
-        load_calibration();
-}
+```
+1. Parse JSON telemetry → lọc objects có label = main-lane (2), other-lane (3), turn-lane (6)
+2. Với mỗi làn đường:
+   a. Lấy polygon contour (pixel)
+   b. Trích xuất centerline bằng phương pháp midpoint:
+      - Với mỗi hàng pixel (v), tìm min_u và max_u trong contour
+      - center_u = (min_u + max_u) / 2
+      - → Tập điểm centerline: {(center_u, v)}
+   c. Transform pixel → mm qua ma trận H:
+      - perspectiveTransform({(center_u, v)}, H) → {(X_mm, Y_mm)}
+   d. Fit đa thức bậc 3: x(y) = a₃y³ + a₂y² + a₁y + a₀
+      - Dùng cv::solve() với ma trận Vandermonde
+   e. Trích xuất:
+      - lateral_offset = a₀ (mm)
+      - heading_angle = arctan(a₁) (rad)
+      - curvature = 2·a₂ (1/mm)
+3. Publish JSON lên /avs/lane_model
 ```
 
-**Bước 2 — Transform pixel polygon → real-world (mm):**
-```cpp
-// Với mỗi điểm (u, v) trong polygon:
-double w = H_[2][0]*u + H_[2][1]*v + H_[2][2];
-if (abs(w) > 1e-6) {
-    double X = (H_[0][0]*u + H_[0][1]*v + H_[0][2]) / w;
-    double Y = (H_[1][0]*u + H_[1][1]*v + H_[1][2]) / w;
-    // làm tròn 0.1mm: round(X*10)/10
-}
-```
-Kết quả: `obj["polygons_real_world"]` — thêm vào JSON telemetry.
-
-**Bước 3 — Extract centerline waypoints:**
-
-Chỉ xử lý lane labels: `main-lane (3)`, `other-lane (4)`, `turn-lane (10)`.
-
-| Label | Phương pháp | Sweep axis |
-|-------|------------|-----------|
-| 3 (main-lane) | `extract_centerline_waypoints_y()` | Y-sweep (bước 100mm) |
-| 4 (other-lane) | `extract_centerline_waypoints_y()` | Y-sweep (bước 100mm) |
-| 10 (turn-lane) | `extract_centerline_waypoints_x()` | X-sweep (bước 100mm) |
-
-```cpp
-// Y-sweep (cho main/other-lane):
-for (double y = start_y; y <= max_y; y += step_mm) {
-    // Ray-casting: tìm X giao của đường y = const với cạnh polygon
-    X_center = (X_min_intersection + X_max_intersection) / 2.0;
-    waypoints.push_back({X_center, y});
-}
-```
-
-**Bước 4 — Dedup & Spatial Smoothing:**
-```cpp
-// Dedup: merge waypoints có cùng t (trung bình)
-// 3-point moving average:
-smoothed[i].s = (raw[i-1].s + raw[i].s + raw[i+1].s) / 3.0;
-```
-
-**Bước 5 — Fit polynomial bậc 3 (SVD):**
-```cpp
-// N >= 4: cubic polynomial
-cv::Mat A(n, 4, CV_64F);  // [t^3, t^2, t, 1]
-cv::Mat B(n, 1, CV_64F);  // [s values]
-cv::solve(A, B, C, cv::DECOMP_SVD);
-// coeffs = [a3, a2, a1, a0]
-
-// N < 4: linear fallback
-cv::Mat A(n, 2, CV_64F);  // [t, 1]
-```
-
-**Bước 6 — Temporal Smoothing (EMA, alpha=0.25):**
-```cpp
-// Áp dụng cho tất cả label đã từng xuất hiện:
-double alpha = 0.25;
-for (size_t c = 0; c < 4; ++c)
-    coeffs[c] = alpha * coeffs[c] + (1.0 - alpha) * prev_coeffs_[label][c];
-```
-
-**Bước 7 — Regenerate smooth waypoints từ polynomial đã smooth:**
-```cpp
-// main-lane / other-lane:
-for (double y_val = y_min; y_val <= y_max; y_val += 100.0) {
-    double x_val = a3*pow(y,3) + a2*pow(y,2) + a1*y + a0;
-    smooth_wps.push_back({x_val, y_val});
-}
-
-// turn-lane:
-for (double x_val = x_min; x_val <= x_max; x_val += 100.0) {
-    double y_val = a3*pow(x,3) + a2*pow(x,2) + a1*x + a0;
-    smooth_wps.push_back({x_val, y_val});
-}
-```
-
-**Bước 8 — Tính control metrics (smooth EMA):**
-
-| Metric | Công thức | Label áp dụng |
-|--------|-----------|---------------|
-| `lateral_offset_mm` | `a0` của x(y) | main-lane, other-lane |
-| `longitudinal_offset_mm` | `a0` của y(x) | turn-lane |
-| `heading_angle_rad` | `atan(a1)` | tất cả lane |
-| `curvature_inv_mm` | `2·a2` | tất cả lane |
-
-**Output JSON mẫu (per object):**
+**Output JSON mẫu:**
 ```json
 {
-  "label": 3,
-  "polygons_real_world": [[[X1,Y1], [X2,Y2], ...]],
-  "waypoints": [[X_c1, Y1], [X_c2, Y2], ...],
-  "polynomial": {"a3": 1e-7, "a2": -0.0003, "a1": 0.015, "a0": 85.2},
-  "lateral_offset_mm": 85.2,
-  "longitudinal_offset_mm": 0.0,
-  "heading_angle_rad": 0.015,
-  "curvature_inv_mm": -0.0006
+    "timestamp": 1718042400.123,
+    "lanes": [
+        {
+            "class": "main-lane",
+            "label": 2,
+            "polynomial": {"a3": 1e-7, "a2": -0.0003, "a1": 0.015, "a0": 85.2},
+            "lateral_offset_mm": 85.2,
+            "heading_angle_rad": 0.015,
+            "curvature_inv_mm": -0.0006,
+            "num_points": 120,
+            "y_range_mm": [50, 1200]
+        },
+        {
+            "class": "other-lane",
+            "label": 3,
+            "polynomial": {"a3": 8e-8, "a2": -0.0002, "a1": 0.012, "a0": -180.5},
+            "lateral_offset_mm": -180.5,
+            "heading_angle_rad": 0.012,
+            "curvature_inv_mm": -0.0004,
+            "num_points": 95,
+            "y_range_mm": [80, 1100]
+        }
+    ],
+    "calibrated": true
 }
 ```
 
 ---
 
-### 3.5 CMakeLists.txt
+### 3.5 Cập Nhật CMakeLists.txt
+
+Thêm executable mới cho `lane_transform_node`:
 
 ```cmake
-# IPM Transform Node
-add_executable(ipm_transform_node src/ipm_transform_node.cpp)
-target_link_libraries(ipm_transform_node ${OpenCV_LIBRARIES})
-ament_target_dependencies(ipm_transform_node
-  rclcpp std_msgs nlohmann_json_vendor)
-install(TARGETS ipm_transform_node
+# Lane Transform Node
+add_executable(lane_transform_node src/lane_transform_node.cpp)
+ament_target_dependencies(lane_transform_node rclcpp std_msgs)
+target_link_libraries(lane_transform_node ${OpenCV_LIBRARIES})
+
+install(TARGETS lane_transform_node
   DESTINATION lib/${PROJECT_NAME})
 ```
 
 ---
 
-### 3.6 Docker Compose
+### 3.6 Cập Nhật Docker Compose
 
-Node `ipm_transform_node` được khởi chạy song song trong `avs_perception_container`:
+Thêm lệnh khởi chạy `lane_transform_node` — có thể chạy chung container `avs_perception` hoặc tạo container riêng.
 
+**Phương án đơn giản:** chạy song song trong `avs_perception_container`:
 ```yaml
-command: bash -c "... colcon build --symlink-install && ... &&
-  (ros2 run avs_perception ncnn_inference_node &
-   ros2 run avs_perception ipm_transform_node)"
+command: bash -c "cd /workspace/ros2_ws && rm -rf build install log && colcon build --symlink-install && source install/setup.bash && ros2 run avs_perception ncnn_inference_node & ros2 run avs_perception lane_transform_node"
 ```
+
+**Phương án tách biệt (khuyến nghị):** thêm container riêng để có thể restart độc lập.
 
 ---
 
-## 4. Luồng Dữ Liệu Đầy Đủ
+## 4. Thứ Tự Triển Khai
 
-```
-[Camera USB] --> video_publisher_node
-                     | /camera/image_raw/compressed
-                     v
-               ncnn_inference_node (NCNN YOLO)
-                     | /avs/telemetry
-                     | JSON: {objects: [{label, polygons(pixel), ...}]}
-                     v
-               ipm_transform_node (C++)
-                     |
-                     |-- Load H from calibration.json (auto-reload)
-                     |-- Transform polygon pixel -> real-world mm
-                     |-- Extract centerline waypoints (Y-sweep / X-sweep)
-                     |-- Spatial smooth (3-point MA)
-                     |-- Fit polynomial bac 3 (SVD)
-                     |-- Temporal smooth (EMA alpha=0.25)
-                     |-- Regenerate smooth waypoints
-                     |-- Compute lateral_offset, heading, curvature
-                     |
-                     | /avs/telemetry_realworld
-                     | JSON: {objects: [{..., polygons_real_world,
-                     |                      waypoints, polynomial,
-                     |                      lateral_offset_mm, ...}]}
-                     v
-               web_bridge_node (FastAPI)
-                     | WebSocket /ws
-                     v
-               Browser BEV Canvas (JavaScript)
-                     |-- Draw polygons_real_world
-                     |-- Draw waypoints
-                     |-- Draw smooth polyline curve
-```
+| Phase | Công việc | Files |
+|-------|----------|-------|
+| **Phase 1** | Backend API calibration + config file | `main.py`, `config/calibration.json` |
+| **Phase 2** | Frontend UI chế độ calibration | `frontend/index.html`, JS/CSS |
+| **Phase 3** | `lane_transform_node` C++ (core logic) | `lane_transform_node.cpp`, `CMakeLists.txt` |
+| **Phase 4** | Cập nhật Docker Compose + test end-to-end | `docker-compose.yml`, `docker-compose.prod.yml` |
+| **Phase 5** | Kết nối output `/avs/lane_model` với bộ điều khiển PID | `coordinatesPID/` integration |
 
 ---
 
-## 5. Quy Trình Sử Dụng
+## 5. Quy Trình Sử Dụng (User Flow)
 
-### Calibration (1 lần duy nhất):
+### Calibration (1 lần):
 ```
-1. Đặt vật tham chiếu (kích thước đã biết, đặt trước đầu xe)
-2. Mở web dashboard: http://<hostname>:8000
-3. Bấm nút [Calibrate] → modal mở, hiển thị frame camera
-4. Click 4 góc của vật tham chiếu theo thứ tự: TL→TR→BR→BL
-5. Nhập tọa độ thực (mm) cho 4 điểm (gốc 0,0 = đầu xe)
-6. Bấm [Save Calibration]
-7. H được lưu vào config/calibration.json
-8. ipm_transform_node tự động reload (phát hiện file thay đổi)
-9. BEV canvas chuyển badge sang "CALIBRATED"
+1. Đặt vật tham chiếu (kích thước đã biết) trên mặt đường trước camera
+2. Mở web dashboard trên laptop: http://<hostname>:8000
+3. Bấm nút [Calibration]
+4. Ảnh camera freeze → click 4 góc của vật tham chiếu
+5. Nhập tọa độ thực (mm) cho 4 điểm
+6. Bấm [Tính & Lưu]
+7. Ma trận H được lưu vào config/calibration.json
+8. lane_transform_node tự động reload config
 ```
 
 ### Vận hành (liên tục):
 ```
 1. Camera stream → video_publisher_node
-2. YOLO seg → ncnn_inference_node → /avs/telemetry (pixel)
-3. ipm_transform_node → /avs/telemetry_realworld (real-world mm + waypoints)
-4. web_bridge_node → WebSocket → BEV canvas hiển thị real-time
-5. [TODO] Controller đọc lateral_offset_mm, heading_angle_rad, curvature_inv_mm
-         → tính Twist → điều khiển xe
+2. YOLO segmentation → ncnn_inference_node → /avs/telemetry
+3. Lane transform → lane_transform_node → /avs/lane_model
+4. Bộ điều khiển đọc /avs/lane_model → tính Twist → điều khiển xe
 ```
 
 ---
 
-## 6. Trạng Thái Triển Khai
-
-| Phase | Công việc | Trạng thái |
-|-------|----------|-----------|
-| **Phase 1** | Backend API calibration + config file | ✅ Hoàn thành |
-| **Phase 2** | Frontend UI calibration modal + BEV canvas | ✅ Hoàn thành |
-| **Phase 3** | `ipm_transform_node` C++ (core logic) | ✅ Hoàn thành |
-| **Phase 4** | Docker Compose integration + end-to-end test | ✅ Hoàn thành |
-| **Phase 5** | Kết nối output với bộ điều khiển PID/Twist | ⬜ Chưa triển khai |
-
----
-
-## 7. Xác Minh & Kiểm Thử
+## 6. Xác Minh & Kiểm Thử
 
 | Bước kiểm tra | Cách thực hiện |
 |---------------|----------------|
-| Calibration API | POST 4 cặp điểm → kiểm tra `calibration.json` có H hợp lệ |
-| Auto-reload | Lưu lại calibration mới → ipm_transform_node log "Reloading..." |
-| Transform chính xác | Đặt vật ở vị trí đã biết, kiểm tra `polygons_real_world` output |
-| Polynomial fit | BEV canvas hiển thị đường cong mượt trùng với vị trí làn |
-| Temporal smooth | Quan sát BEV canvas — đường cong không bị giật khi detection thay đổi |
-| Control metrics | `lateral_offset_mm` thay đổi khi xe lệch khỏi làn |
+| Calibration API | Gửi 4 cặp điểm qua Postman/curl, kiểm tra `calibration.json` |
+| Transform chính xác | Đặt vật ở vị trí đã biết, so sánh output mm với đo thực tế |
+| Polynomial fit | Hiển thị đường cong fit overlay lên ảnh BEV trên dashboard |
+| End-to-end | Chạy xe trên băng rôn, kiểm tra lateral offset thay đổi hợp lý |
