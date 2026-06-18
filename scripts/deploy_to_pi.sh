@@ -36,6 +36,7 @@ rsync -avz \
   --exclude 'test/' \
   --exclude '*.docx' \
   --exclude '*.mp4' \
+  --exclude 'config/calibration.json' \
   /home/goln/SimpleSysIDV/ \
   "$PI_USER@$PI_HOST:$PI_DIR/"
 
