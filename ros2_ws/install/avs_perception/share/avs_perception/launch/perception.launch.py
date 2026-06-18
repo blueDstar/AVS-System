@@ -1,1 +1,0 @@
-/workspace/ros2_ws/src/avs_perception/launch/perception.launch.py
