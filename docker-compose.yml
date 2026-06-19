@@ -17,10 +17,10 @@ services:
       - ./test:/workspace/test
       - ./config:/workspace/config
     environment:
-      - ROS_DOMAIN_ID=0
+      - ROS_DOMAIN_ID=20
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
-    command: bash -c "cd /workspace/ros2_ws && rm -rf build install log && colcon build --symlink-install && source install/setup.bash && (ros2 run avs_perception ncnn_inference_node & ros2 run avs_perception ipm_transform_node)"
+    command: bash -c "cd /workspace/ros2_ws && rm -rf build install log && colcon build --symlink-install && source install/setup.bash && (ros2 run avs_perception ncnn_inference_node & ros2 run avs_perception ipm_transform_node & ros2 run avs_perception control_node)"
 
   video_publisher:
     build:
@@ -37,7 +37,7 @@ services:
       - ./test:/workspace/test
       - ./config:/workspace/config
     environment:
-      - ROS_DOMAIN_ID=0
+      - ROS_DOMAIN_ID=20
     command: bash -c "while [ -f /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node ]; do echo 'Waiting for old build to be cleared...'; sleep 1; done && while [ ! -f /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node ]; do echo 'Waiting for video_publisher_node compilation...'; sleep 2; done && cd /workspace/ros2_ws && source install/setup.bash && ros2 run avs_perception video_publisher_node"
 
   web_dashboard:
@@ -54,7 +54,7 @@ services:
       - ./test:/workspace/test
       - ./config:/workspace/config
     environment:
-      - ROS_DOMAIN_ID=0
+      - ROS_DOMAIN_ID=20
     ports:
       - "8000:8000"
     command: python3 /workspace/web_dashboard/backend/main.py

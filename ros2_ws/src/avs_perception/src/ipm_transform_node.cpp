@@ -10,6 +10,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include <opencv2/opencv.hpp>
 #include <nlohmann/json.hpp>
 
@@ -20,27 +21,54 @@ public:
     IPMTransformNode() : Node("ipm_transform_node") {
         // Declare ROS2 parameters
         this->declare_parameter<std::string>("calibration_file_path", "/workspace/config/calibration.json");
+        this->declare_parameter<double>("lookahead_T_preview", 0.5);   // seconds
+        this->declare_parameter<double>("lookahead_d_min_mm", 150.0);  // mm
+        this->declare_parameter<double>("lookahead_d_max_mm", 600.0);  // mm
+
         calibration_file_path_ = this->get_parameter("calibration_file_path").as_string();
+        T_preview_  = this->get_parameter("lookahead_T_preview").as_double();
+        d_min_mm_   = this->get_parameter("lookahead_d_min_mm").as_double();
+        d_max_mm_   = this->get_parameter("lookahead_d_max_mm").as_double();
 
         RCLCPP_INFO(this->get_logger(), "Starting IPM Transform Node.");
         RCLCPP_INFO(this->get_logger(), "Calibration file path: %s", calibration_file_path_.c_str());
+        RCLCPP_INFO(this->get_logger(), "Look-ahead: T_preview=%.2fs, d=[%.0f, %.0f]mm",
+            T_preview_, d_min_mm_, d_max_mm_);
 
         // Attempt initial calibration load
         load_calibration();
 
-        // Create publisher for real-world telemetry
+        // Publisher for real-world telemetry
         telemetry_realworld_pub_ = this->create_publisher<std_msgs::msg::String>("/avs/telemetry_realworld", 10);
 
-        // Create subscription to telemetry JSON data
+        // Subscriber to raw telemetry (pixel coords)
         telemetry_sub_ = this->create_subscription<std_msgs::msg::String>(
             "/avs/telemetry", 10,
             std::bind(&IPMTransformNode::telemetry_callback, this, std::placeholders::_1)
         );
 
-        RCLCPP_INFO(this->get_logger(), "Subscribed to /avs/telemetry, publishing to /avs/telemetry_realworld");
+        // Subscriber to odometry for dynamic look-ahead velocity
+        odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            "/odom_raw", 10,
+            std::bind(&IPMTransformNode::odom_callback, this, std::placeholders::_1)
+        );
+
+        RCLCPP_INFO(this->get_logger(), "Subscribed to /avs/telemetry and /odom_raw, publishing to /avs/telemetry_realworld");
     }
 
 private:
+    // Odometry callback — extract linear speed (mm/s) from /odom_raw
+    void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+        // linear.x is forward velocity in m/s → convert to mm/s
+        current_speed_mms_ = std::abs(msg->twist.twist.linear.x) * 1000.0;
+    }
+
+    // Compute dynamic look-ahead distance based on current speed
+    double compute_lookahead_d() const {
+        // Re-read parameters in case they were changed at runtime
+        double d = current_speed_mms_ * T_preview_;
+        return std::clamp(d, d_min_mm_, d_max_mm_);
+    }
     void load_calibration() {
         try {
             if (!std::filesystem::exists(calibration_file_path_)) {
@@ -461,6 +489,13 @@ private:
                                     obj["longitudinal_offset_mm"] = std::round(longitudinal_offset * 10.0) / 10.0;
                                     obj["heading_angle_rad"] = std::round(heading_angle * 1000.0) / 1000.0;
                                     obj["curvature_inv_mm"] = std::round(curvature * 1e6) / 1e6;
+
+                                    // 6. Look-ahead for turn-lane (y(x)): target is vehicle centerline x=0
+                                    // longitudinal_offset (a0) = distance vehicle must travel to reach turn lane
+                                    double d_la_turn = compute_lookahead_d();
+                                    obj["lookahead_d_mm"]      = std::round(d_la_turn * 10.0) / 10.0;
+                                    obj["lookahead_x_mm"]      = 0.0;  // turn: lateral target = vehicle centerline
+                                    obj["lookahead_theta_rad"] = std::round(heading_angle * 1000.0) / 1000.0;
                                 }
                             } else {
                                 // main-lane (label 3) or other-lane (label 4) -> sweep along Y and fit x(y)
@@ -558,6 +593,21 @@ private:
                                     obj["longitudinal_offset_mm"] = 0.0;
                                     obj["heading_angle_rad"] = std::round(heading_angle * 1000.0) / 1000.0;
                                     obj["curvature_inv_mm"] = std::round(curvature * 1e6) / 1e6;
+
+                                    // 6. Dynamic look-ahead: evaluate x(y) polynomial at d_lookahead
+                                    // Vehicle frame O=(0,0) at bottom-center. Y = forward, X = lateral.
+                                    // x_wp is the lateral position of the centerline at look-ahead distance d.
+                                    // theta is the heading error = angle of vector (x_wp, d) from Y-axis.
+                                    double d_la = compute_lookahead_d();
+                                    double x_wp = coeffs[0] * std::pow(d_la, 3)
+                                                + coeffs[1] * std::pow(d_la, 2)
+                                                + coeffs[2] * d_la
+                                                + coeffs[3];
+                                    double theta_la = std::atan2(x_wp, d_la);
+
+                                    obj["lookahead_d_mm"]      = std::round(d_la * 10.0) / 10.0;
+                                    obj["lookahead_x_mm"]      = std::round(x_wp * 10.0) / 10.0;
+                                    obj["lookahead_theta_rad"] = std::round(theta_la * 1000.0) / 1000.0;
                                 }
                             }
                         }
@@ -584,8 +634,15 @@ private:
     double H_[3][3] = {0};
     std::filesystem::file_time_type last_write_time_;
 
+    // Look-ahead parameters
+    double T_preview_       = 0.5;    // seconds
+    double d_min_mm_        = 150.0;  // mm
+    double d_max_mm_        = 600.0;  // mm
+    double current_speed_mms_ = 0.0; // mm/s (from /odom_raw)
+
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr telemetry_realworld_pub_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr telemetry_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
 
     // Temporal smoothing memory (Label -> previous values)
     std::map<int, std::vector<double>> prev_coeffs_;

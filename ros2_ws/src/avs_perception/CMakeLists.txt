@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -81,6 +83,14 @@ target_link_libraries(ipm_transform_node ${OpenCV_LIBRARIES})
 ament_target_dependencies(ipm_transform_node
   rclcpp
   std_msgs
+  nav_msgs
+)
+
+# Create lane error publisher node
+add_executable(control_node src/control_node.cpp)
+ament_target_dependencies(control_node
+  rclcpp
+  std_msgs
 )
 
 # Install rules
@@ -90,6 +100,7 @@ install(TARGETS
   video_test_node
   video_publisher_node
   ipm_transform_node
+  control_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

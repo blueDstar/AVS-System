@@ -8,15 +8,15 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # Declare launch configurations
     model_param_path = LaunchConfiguration('model_param_path')
-    model_bin_path = LaunchConfiguration('model_bin_path')
-    video_path = LaunchConfiguration('video_path')
-    output_path = LaunchConfiguration('output_path')
-    prob_threshold = LaunchConfiguration('prob_threshold')
-    nms_threshold = LaunchConfiguration('nms_threshold')
-    mode = LaunchConfiguration('mode')  # 'live' or 'test'
+    model_bin_path   = LaunchConfiguration('model_bin_path')
+    video_path       = LaunchConfiguration('video_path')
+    output_path      = LaunchConfiguration('output_path')
+    prob_threshold   = LaunchConfiguration('prob_threshold')
+    nms_threshold    = LaunchConfiguration('nms_threshold')
+    mode             = LaunchConfiguration('mode')  # 'live' or 'test'
 
     return LaunchDescription([
-        # Declare arguments
+        # ── Declare arguments ──────────────────────────────────────────────
         DeclareLaunchArgument(
             'model_param_path',
             default_value='/workspace/models/yolo26-best_ncnn_model/model.ncnn.param',
@@ -53,7 +53,7 @@ def generate_launch_description():
             description='Execution mode: live or test'
         ),
 
-        # Live Inference Node (runs when mode == 'live')
+        # ── Live Inference Node ────────────────────────────────────────────
         Node(
             package='avs_perception',
             executable='ncnn_inference_node',
@@ -61,14 +61,14 @@ def generate_launch_description():
             output='screen',
             parameters=[{
                 'model_param_path': model_param_path,
-                'model_bin_path': model_bin_path,
-                'prob_threshold': prob_threshold,
-                'nms_threshold': nms_threshold,
+                'model_bin_path':   model_bin_path,
+                'prob_threshold':   prob_threshold,
+                'nms_threshold':    nms_threshold,
             }],
             condition=IfCondition(PythonExpression(["'", mode, "' == 'live'"]))
         ),
 
-        # Video Profiling/Test Node (runs when mode == 'test')
+        # ── Video Profiling/Test Node ──────────────────────────────────────
         Node(
             package='avs_perception',
             executable='video_test_node',
@@ -76,12 +76,42 @@ def generate_launch_description():
             output='screen',
             parameters=[{
                 'model_param_path': model_param_path,
-                'model_bin_path': model_bin_path,
-                'video_path': video_path,
-                'output_path': output_path,
-                'prob_threshold': prob_threshold,
-                'nms_threshold': nms_threshold,
+                'model_bin_path':   model_bin_path,
+                'video_path':       video_path,
+                'output_path':      output_path,
+                'prob_threshold':   prob_threshold,
+                'nms_threshold':    nms_threshold,
             }],
             condition=IfCondition(PythonExpression(["'", mode, "' == 'test'"]))
-        )
+        ),
+
+        # ── IPM Transform Node (pixel → real-world mm + look-ahead) ───────
+        Node(
+            package='avs_perception',
+            executable='ipm_transform_node',
+            name='ipm_transform_node',
+            output='screen',
+            parameters=[{
+                'calibration_file_path': '/workspace/config/calibration.json',
+                'lookahead_T_preview':   0.5,    # seconds
+                'lookahead_d_min_mm':    150.0,  # mm
+                'lookahead_d_max_mm':    600.0,  # mm
+            }]
+        ),
+
+        # ── Lane Error Publisher Node ──────────────────────────────────────
+        # Computes epsilon_x, epsilon_y, theta in vehicle frame.
+        # The PD controller is a separate node that reads /avs/control_error.
+        Node(
+            package='avs_perception',
+            executable='control_node',
+            name='control_node',
+            output='screen',
+            parameters=[{
+                # Turn state-machine thresholds
+                'turn_proximity_mm': 500.0,  # mm — distance to arm turn transition
+                'turn_done_mm':      200.0,  # mm — past-turn detection threshold
+                'theta_done_rad':    0.1,    # rad — heading threshold for turn completion
+            }]
+        ),
     ])
