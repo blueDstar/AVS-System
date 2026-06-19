@@ -114,4 +114,21 @@ def generate_launch_description():
                 'theta_done_rad':    0.1,    # rad — heading threshold for turn completion
             }]
         ),
+
+        # ── Pure Pursuit Controller Node ───────────────────────────
+        # Converts /avs/control_error → /cmd_vel (geometry_msgs/Twist)
+        Node(
+            package='avs_perception',
+            executable='pure_pursuit_node',
+            name='pure_pursuit_node',
+            output='screen',
+            parameters=[{
+                'v_max':    0.5,    # m/s — max forward speed
+                'v_min':    0.1,    # m/s — min speed
+                'k_c':      500.0,  # curvature penalty factor
+                'omega_max': 2.0,   # rad/s — max angular velocity
+                'Ld_min_m':  0.05,  # m — minimum look-ahead guard
+                'control_error_timeout_s': 0.5,
+            }]
+        ),
     ])

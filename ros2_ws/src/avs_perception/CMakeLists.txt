@@ -93,6 +93,14 @@ ament_target_dependencies(control_node
   std_msgs
 )
 
+# Create Pure Pursuit controller node (subscribes /avs/control_error, publishes /cmd_vel)
+add_executable(pure_pursuit_node src/pure_pursuit_node.cpp)
+ament_target_dependencies(pure_pursuit_node
+  rclcpp
+  std_msgs
+  geometry_msgs
+)
+
 # Install rules
 install(TARGETS
   yolo26_seg_lib
@@ -101,6 +109,7 @@ install(TARGETS
   video_publisher_node
   ipm_transform_node
   control_node
+  pure_pursuit_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

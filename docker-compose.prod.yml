@@ -32,7 +32,7 @@ services:
       - ./config:/workspace/config
     environment:
       - ROS_DOMAIN_ID=20
-    command: bash -c "while [ -f /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node ]; do echo 'Waiting for old build to be cleared...'; sleep 1; done && while [ ! -f /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node ]; do echo 'Waiting for video_publisher_node compilation...'; sleep 2; done && cd /workspace/ros2_ws && source install/setup.bash && ros2 run avs_perception video_publisher_node"
+    command: bash -c "while [ -f /workspace/ros2_ws/install/setup.bash ]; do echo 'Waiting for old build to be cleared...'; sleep 1; done && while [ ! -f /workspace/ros2_ws/install/setup.bash ]; do echo 'Waiting for build completion...'; sleep 2; done && while [ ! -f /workspace/ros2_ws/install/avs_perception/lib/avs_perception/video_publisher_node ]; do echo 'Waiting for video_publisher_node...'; sleep 2; done && cd /workspace/ros2_ws && source install/setup.bash && ros2 run avs_perception video_publisher_node"
 
   web_dashboard:
     image: avs_perception:arm64
