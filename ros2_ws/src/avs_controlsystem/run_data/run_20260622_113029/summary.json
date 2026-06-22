@@ -1,0 +1,35 @@
+{
+  "created_at": "2026-06-22T11:30:29.711090",
+  "run_dir": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_113029",
+  "note": "Node này giữ nguyên control core cũ, chỉ thêm record video/csv/jpg.",
+  "files": {
+    "camera_video": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_113029/camera_video.avi",
+    "trajectory_csv": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_113029/trajectory.csv",
+    "motor_csv": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_113029/motor_command.csv",
+    "trajectory_jpg": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_113029/trajectory.jpg",
+    "velocity_jpg": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_113029/velocity_omega.jpg"
+  },
+  "topics": {
+    "control_error_topic": "/avs/control_error",
+    "cmd_vel_topic": "/cmd_vel",
+    "debug_topic": "/avs/pur_persuit_pd_mainlane_debug",
+    "camera_topic": "/camera/image_raw",
+    "odom_topic": "/odom"
+  },
+  "control_params_at_start": {
+    "v_max": 0.1,
+    "v_min": 0.025,
+    "v_turn_min": 0.035,
+    "k_c": 0.2,
+    "k_pp": 1.0,
+    "k_theta": 0.22,
+    "kd_lateral": 0.004,
+    "kd_theta": 0.008,
+    "omega_max": 0.35
+  },
+  "finished_at": "2026-06-22T11:32:40.461628",
+  "duration_s": 129.0802505016327,
+  "video_frames": 3442,
+  "trajectory_points": 3420,
+  "command_points": 3420
+}

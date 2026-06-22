@@ -19,6 +19,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'pur_persuit_pd_mainlane_record = avs_controlsystem.pur_persuit_pd_mainlane_record:main',
+            'pur_persuit_pd_mainlane_video_logger = avs_controlsystem.pur_persuit_pd_mainlane_video_logger:main',
+            'pur_persuit_pd_mainlane_following_logger = avs_controlsystem.pur_persuit_pd_mainlane_following_logger:main',
+            'start_turn_pur_persuit_pd_following = avs_controlsystem.start_turn_pur_persuit_pd_following:main',
             'pur_persuit_pd_mainlane_following = avs_controlsystem.pur_persuit_pd_mainlane_following:main',
             'pur_persuit_mainlane_following = avs_controlsystem.pur_persuit_mainlane_following:main',
             'mainlane_following_controlerror = avs_controlsystem.mainlane_following_controlerror:main',

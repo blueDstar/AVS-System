@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-06-22T11:18:23.903145",
+  "run_dir": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_111823",
+  "video_path": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_111823/camera_video.avi",
+  "trajectory_csv": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_111823/trajectory.csv",
+  "motor_csv": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_111823/motor_command.csv",
+  "trajectory_jpg": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_111823/trajectory.jpg",
+  "velocity_jpg": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_111823/velocity_omega.jpg",
+  "note": "Video camera được lưu thành AVI. Không lưu từng ảnh frame camera riêng lẻ.",
+  "default_parameters": {
+    "v_max": 0.1,
+    "v_min": 0.05,
+    "v_turn_min": 0.005,
+    "k_c": 0.02,
+    "k_pp": 1.2,
+    "k_theta": 0.2,
+    "kd_lateral": 0.4,
+    "kd_theta": 0.02,
+    "omega_max": 0.45
+  },
+  "topics": {
+    "control_error_topic": "/avs/control_error",
+    "cmd_vel_topic": "/cmd_vel",
+    "debug_topic": "/avs/pur_persuit_pd_mainlane_debug",
+    "odom_topic": "/odom",
+    "camera_topic": "/camera/image_raw"
+  },
+  "finished_at": "2026-06-22T11:19:08.755611",
+  "duration_s": 41.712960720062256,
+  "video_frames": 334,
+  "video_saved": "/workspace/ros2_ws/src/avs_controlsystem/run_data/run_20260622_111823/camera_video.avi",
+  "trajectory_points": 448,
+  "command_points": 448
+}
