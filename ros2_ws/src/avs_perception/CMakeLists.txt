@@ -5,6 +5,38 @@ project(avs_perception)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ── Build Type ────────────────────────────────────────────────────────────────
+# Default to Release if not explicitly set (e.g. plain `colcon build`)
+# This ensures GCC applies full -O3 optimizations instead of -O0 (Debug)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
+
+# ── CPU Optimizations (Release mode) ──────────────────────────────────────────
+# Targets Raspberry Pi 5 (Cortex-A76, AArch64) at edge, and x86_64 on dev host.
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64" OR CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    add_compile_options(
+      -O3
+      -march=armv8.2-a
+      -mtune=cortex-a76
+      -ffast-math
+      -funroll-loops
+    )
+    message(STATUS "AVS: Release build — ARM64 optimizations ENABLED (-O3 -march=armv8.2-a -mtune=cortex-a76)")
+  else()
+    add_compile_options(
+      -O3
+      -ffast-math
+      -funroll-loops
+    )
+    message(STATUS "AVS: Release build — Generic/x86_64 optimizations ENABLED (-O3)")
+  endif()
+else()
+  message(STATUS "AVS: Non-release build (${CMAKE_BUILD_TYPE}) — optimizations DISABLED")
+endif()
+
 # Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -93,14 +125,6 @@ ament_target_dependencies(control_node
   std_msgs
 )
 
-# Create Pure Pursuit controller node (subscribes /avs/control_error, publishes /cmd_vel)
-add_executable(pure_pursuit_node src/pure_pursuit_node.cpp)
-ament_target_dependencies(pure_pursuit_node
-  rclcpp
-  std_msgs
-  geometry_msgs
-)
-
 # Install rules
 install(TARGETS
   yolo26_seg_lib
@@ -109,7 +133,6 @@ install(TARGETS
   video_publisher_node
   ipm_transform_node
   control_node
-  pure_pursuit_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -12,8 +12,8 @@ class VideoTestNode : public rclcpp::Node {
 public:
     VideoTestNode() : Node("video_test_node") {
         // Declare parameters
-        this->declare_parameter<std::string>("model_param_path", "/workspace/models/yolo26-best_ncnn_model/model.ncnn.param");
-        this->declare_parameter<std::string>("model_bin_path", "/workspace/models/yolo26-best_ncnn_model/model.ncnn.bin");
+        this->declare_parameter<std::string>("model_param_path", "/workspace/models/yolo26-best_ncnn_model_int8/model.ncnn.param");
+        this->declare_parameter<std::string>("model_bin_path", "/workspace/models/yolo26-best_ncnn_model_int8/model.ncnn.bin");
         this->declare_parameter<std::string>("video_path", "/workspace/test/test_video/video_test1.mp4");
         this->declare_parameter<std::string>("output_path", "/workspace/test/test_video_output/output_video_test1.mp4");
         this->declare_parameter<float>("prob_threshold", 0.25f);

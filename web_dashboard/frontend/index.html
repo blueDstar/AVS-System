@@ -4,14 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AVS AI Autonomous Vision System</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
     <!-- Custom Style Sheet -->
     <link rel="stylesheet" href="style.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js (Local for offline speed) -->
+    <script src="chart.js"></script>
 </head>
 <body>
     <div class="glass-bg"></div>
@@ -99,6 +95,27 @@
                     <div class="bev-footer" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; font-weight: 600;">
                         <span>Grid interval: 500 mm</span>
                         <span>Vehicle at bottom center</span>
+                    </div>
+                </section>
+
+                <!-- ARM / DISARM VEHICLE CONTROL -->
+                <section class="panel arm-panel">
+                    <div class="panel-header">
+                        <h2><span class="icon">🚗</span> Vehicle Motion Control</h2>
+                        <span id="arm-status-badge" class="badge idle">DISARMED</span>
+                    </div>
+                    <div class="arm-control-body">
+                        <p class="arm-hint">
+                            System starts in <strong>SAFE MODE</strong>. Arm the vehicle to enable motor output via <code>/avs/cmd</code>.
+                        </p>
+                        <div class="arm-button-group">
+                            <button id="btn-arm" class="btn btn-arm">
+                                <span class="btn-icon">🟢</span> ARM
+                            </button>
+                            <button id="btn-disarm" class="btn btn-disarm" disabled>
+                                <span class="btn-icon">🔴</span> DISARM
+                            </button>
+                        </div>
                     </div>
                 </section>
 

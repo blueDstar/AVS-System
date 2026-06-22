@@ -1,0 +1,179 @@
+/**
+ * cmdvel_from_control_error_node.cpp
+ *
+ * PD Controller for autonomous vehicle.
+ *
+ * Subscribes to /avs/control_error (computed by control_node) and converts
+ * the geometric errors into a ROS2 Twist command using a PD controller:
+ *
+ *   Inputs (from /avs/control_error):
+ *     epsilon_x_mm  — lateral deviation  (mm)
+ *     epsilon_y_mm  — longitudinal distance (mm)
+ *     theta_rad     — heading error       (rad)
+ *     curvature_inv_mm — lane curvature   (1/mm)
+ *
+ *   PD Control Formulation:
+ *     e_lat = epsilon_x_m (meters)
+ *     e_head = theta_rad (radians)
+ *     e_combined = w_lat * e_lat + w_head * e_head
+ *     omega = kp * e_combined + kd * (e_combined - e_combined_prev) / dt
+ *
+ * Output:
+ *   /cmd_vel  (geometry_msgs/Twist)
+ *
+ * Subscriptions:
+ *   /avs/control_error  (std_msgs/String JSON)
+ *
+ * Publications:
+ *   /cmd_vel            (geometry_msgs/Twist)
+ */
+
+#include <memory>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include <chrono>
+
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+using namespace std::chrono_literals;
+
+class CmdVelFromControlErrorNode : public rclcpp::Node {
+public:
+    CmdVelFromControlErrorNode() : Node("cmdvel_from_control_error_node") {
+        // ── Declare parameters ───────────────────────────────────────────────
+        // Longitudinal
+        this->declare_parameter<double>("v_max", 0.5);      // m/s — max forward speed
+        this->declare_parameter<double>("v_min", 0.1);      // m/s — min speed
+        this->declare_parameter<double>("k_c", 500.0);      // curvature penalty factor
+        // Lateral PD
+        this->declare_parameter<double>("kp", 1.5);         // Proportional gain
+        this->declare_parameter<double>("kd", 0.1);         // Derivative gain
+        this->declare_parameter<double>("w_lat", 0.7);      // Weight for lateral error (m)
+        this->declare_parameter<double>("w_head", 0.3);     // Weight for heading error (rad)
+        this->declare_parameter<double>("omega_max", 2.0);  // rad/s — clamp angular velocity
+        // Safety
+        this->declare_parameter<double>("control_error_timeout_s", 0.5);
+
+        load_params();
+
+        // ── Publisher ────────────────────────────────────────────────────────
+        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+
+        // ── Subscriber ───────────────────────────────────────────────────────
+        control_error_sub_ = this->create_subscription<std_msgs::msg::String>(
+            "/avs/control_error", 10,
+            std::bind(&CmdVelFromControlErrorNode::control_error_callback, this, std::placeholders::_1)
+        );
+
+        // ── Watchdog ─────────────────────────────────────────────────────────
+        watchdog_timer_ = this->create_wall_timer(
+            100ms,
+            std::bind(&CmdVelFromControlErrorNode::watchdog_callback, this)
+        );
+
+        last_control_time_ = this->get_clock()->now();
+
+        RCLCPP_INFO(this->get_logger(), "CmdVelFromControlErrorNode (PD) started.");
+        RCLCPP_INFO(this->get_logger(), "  kp=%.2f | kd=%.2f | w_lat=%.2f | w_head=%.2f",
+            kp_, kd_, w_lat_, w_head_);
+    }
+
+private:
+    void load_params() {
+        v_max_     = this->get_parameter("v_max").as_double();
+        v_min_     = this->get_parameter("v_min").as_double();
+        k_c_       = this->get_parameter("k_c").as_double();
+        kp_        = this->get_parameter("kp").as_double();
+        kd_        = this->get_parameter("kd").as_double();
+        w_lat_     = this->get_parameter("w_lat").as_double();
+        w_head_    = this->get_parameter("w_head").as_double();
+        omega_max_ = this->get_parameter("omega_max").as_double();
+        timeout_s_ = this->get_parameter("control_error_timeout_s").as_double();
+    }
+
+    void control_error_callback(const std_msgs::msg::String::SharedPtr msg) {
+        auto now = this->get_clock()->now();
+        last_msg_time_ = now;
+        has_received_ = true;
+
+        load_params();
+
+        try {
+            json err = json::parse(msg->data);
+
+            // Read errors (mm -> m)
+            double epsilon_x_m = err.value("epsilon_x_mm", 0.0) / 1000.0;
+            double theta = err.value("theta_rad", 0.0);
+            double kappa_m = err.value("curvature_inv_mm", 0.0) * 1000.0; // 1/mm -> 1/m
+
+            // Calculate dt for derivative
+            double dt = (now - last_control_time_).seconds();
+            last_control_time_ = now;
+            if (dt <= 0.0 || dt > timeout_s_) {
+                dt = 0.05; // default to 20Hz if interval is invalid
+            }
+
+            // PD calculation
+            double e_combined = w_lat_ * epsilon_x_m + w_head_ * theta;
+            double de = (e_combined - e_combined_prev_) / dt;
+            e_combined_prev_ = e_combined;
+
+            double omega = kp_ * e_combined + kd_ * de;
+            omega = std::clamp(omega, -omega_max_, omega_max_);
+
+            // Longitudinal control (reduce speed on curve and large heading error)
+            double v = (v_max_ * std::cos(theta)) / (1.0 + k_c_ * std::abs(kappa_m));
+            v = std::clamp(v, v_min_, v_max_);
+
+            // Publish Twist
+            geometry_msgs::msg::Twist cmd;
+            cmd.linear.x = v;
+            cmd.angular.z = omega;
+            cmd_vel_pub_->publish(cmd);
+
+            RCLCPP_DEBUG(this->get_logger(),
+                "PD: e_lat=%.3fm  theta=%.3frad  e_comb=%.3f  →  v=%.3fm/s  omega=%.3frad/s",
+                epsilon_x_m, theta, e_combined, v, omega);
+
+        } catch (const std::exception& e) {
+            RCLCPP_ERROR(this->get_logger(), "parse error in control_error_callback: %s", e.what());
+        }
+    }
+
+    void watchdog_callback() {
+        if (!has_received_) return;
+
+        double age_s = (this->get_clock()->now() - last_msg_time_).seconds();
+        if (age_s > timeout_s_) {
+            geometry_msgs::msg::Twist zero;
+            cmd_vel_pub_->publish(zero);
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                "PD control timeout (%.2fs). Stopping robot.", age_s);
+        }
+    }
+
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr control_error_sub_;
+    rclcpp::TimerBase::SharedPtr watchdog_timer_;
+
+    bool has_received_ = false;
+    rclcpp::Time last_msg_time_{0, 0, RCL_ROS_TIME};
+    rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};
+
+    double e_combined_prev_ = 0.0;
+
+    double v_max_, v_min_, k_c_, kp_, kd_, w_lat_, w_head_, omega_max_, timeout_s_;
+};
+
+int main(int argc, char* argv[]) {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<CmdVelFromControlErrorNode>();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}

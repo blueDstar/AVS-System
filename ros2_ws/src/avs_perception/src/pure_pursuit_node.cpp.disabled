@@ -1,0 +1,195 @@
+/**
+ * pure_pursuit_node.cpp
+ *
+ * Safe Error Publisher Node.
+ *
+ * Subscribes to /avs/control_error (computed by control_node) and forwards
+ * the geometric errors only when the system is ARMED.
+ * If the system is DISARMED (safe mode) or if the watchdog detects stale data,
+ * it publishes zero errors to ensure any downstream controller stops the vehicle.
+ *
+ *   Inputs (from /avs/control_error):
+ *     epsilon_x_mm     — lateral deviation  (mm), positive = waypoint is to the right
+ *     epsilon_y_mm     — look-ahead distance (mm) = L_d
+ *     theta_rad        — heading error       (rad)
+ *     curvature_inv_mm — lane curvature   (1/mm)
+ *
+ *   Output:
+ *     /avs/safe_control_error (std_msgs/String JSON)
+ *       {
+ *         "epsilon_x_mm": double,
+ *         "epsilon_y_mm": double,
+ *         "theta_rad": double,
+ *         "curvature_inv_mm": double,
+ *         "armed": bool
+ *       }
+ *
+ * Safety:
+ *   The node starts in SAFE MODE (armed_ = false).
+ *   It publishes zero errors until it receives the arm command:
+ *     /avs/cmd  {"cmd": "arm"}    — enable motion
+ *     /avs/cmd  {"cmd": "disarm"} — return to safe mode (zero errors)
+ *   The watchdog also auto-disarms when control_error goes stale.
+ *
+ * Subscriptions:
+ *   /avs/control_error  (std_msgs/String JSON)
+ *   /avs/cmd            (std_msgs/String JSON)
+ *
+ * Publications:
+ *   /avs/safe_control_error (std_msgs/String JSON)
+ */
+
+#include <memory>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include <chrono>
+
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+using namespace std::chrono_literals;
+
+class PurePursuitNode : public rclcpp::Node {
+public:
+    PurePursuitNode() : Node("pure_pursuit_node") {
+        // ── Declare parameters ───────────────────────────────────────────────
+        this->declare_parameter<double>("control_error_timeout_s", 0.5);
+        timeout_s_ = this->get_parameter("control_error_timeout_s").as_double();
+
+        // ── Publisher ────────────────────────────────────────────────────────
+        safe_error_pub_ = this->create_publisher<std_msgs::msg::String>("/avs/safe_control_error", 10);
+
+        // ── Subscribers ──────────────────────────────────────────────────────
+        control_error_sub_ = this->create_subscription<std_msgs::msg::String>(
+            "/avs/control_error", 10,
+            std::bind(&PurePursuitNode::control_error_callback, this, std::placeholders::_1)
+        );
+        cmd_sub_ = this->create_subscription<std_msgs::msg::String>(
+            "/avs/cmd", 10,
+            std::bind(&PurePursuitNode::cmd_callback, this, std::placeholders::_1)
+        );
+
+        // ── Watchdog: zero errors if control_error goes stale ────────────────
+        watchdog_timer_ = this->create_wall_timer(
+            100ms,
+            std::bind(&PurePursuitNode::watchdog_callback, this)
+        );
+
+        RCLCPP_INFO(this->get_logger(), "PurePursuitNode (Safe Error Publisher) started. [SAFE MODE — DISARMED]");
+        RCLCPP_INFO(this->get_logger(), "  Subscribing: /avs/control_error, /avs/cmd");
+        RCLCPP_INFO(this->get_logger(), "  Publishing:  /avs/safe_control_error");
+        RCLCPP_INFO(this->get_logger(), "  Send {\"cmd\":\"arm\"} to /avs/cmd to enable motion.");
+    }
+
+private:
+    // ── Arm/Disarm command callback ──────────────────────────────────────────
+    void cmd_callback(const std_msgs::msg::String::SharedPtr msg) {
+        try {
+            json cmd_json = json::parse(msg->data);
+            std::string cmd = cmd_json.value("cmd", "");
+
+            if (cmd == "arm" && !armed_) {
+                armed_ = true;
+                RCLCPP_INFO(this->get_logger(), "[ARMED] Safety released. Forwarding actual errors.");
+            } else if (cmd == "disarm" && armed_) {
+                armed_ = false;
+                publish_zero();
+                RCLCPP_INFO(this->get_logger(), "[DISARMED] Safe mode active. Zero errors published.");
+            }
+        } catch (const std::exception& e) {
+            RCLCPP_WARN(this->get_logger(), "cmd_callback parse error: %s", e.what());
+        }
+    }
+
+    // ── Control error callback ────────────────────────────────────────────────
+    void control_error_callback(const std_msgs::msg::String::SharedPtr msg) {
+        last_msg_time_ = this->get_clock()->now();
+        has_received_ = true;
+
+        try {
+            json err = json::parse(msg->data);
+
+            double epsilon_x = err.value("epsilon_x_mm", 0.0);
+            double epsilon_y = err.value("epsilon_y_mm", 300.0);
+            double theta     = err.value("theta_rad", 0.0);
+            double curvature = err.value("curvature_inv_mm", 0.0);
+
+            publish_safe_errors(epsilon_x, epsilon_y, theta, curvature);
+
+        } catch (const std::exception& e) {
+            RCLCPP_ERROR(this->get_logger(), "control_error_callback parse error: %s", e.what());
+        }
+    }
+
+    // ── Helper to construct and publish safe control errors ──────────────────
+    void publish_safe_errors(double epsilon_x, double epsilon_y, double theta, double curvature) {
+        json out;
+        if (armed_) {
+            out["epsilon_x_mm"]     = epsilon_x;
+            out["epsilon_y_mm"]     = epsilon_y;
+            out["theta_rad"]        = theta;
+            out["curvature_inv_mm"] = curvature;
+            out["armed"]            = true;
+        } else {
+            // Safe mode: force errors to zero so any downstream controller computes zero velocities.
+            // L_d (epsilon_y) is kept to avoid potential division by zero in controllers.
+            out["epsilon_x_mm"]     = 0.0;
+            out["epsilon_y_mm"]     = epsilon_y;
+            out["theta_rad"]        = 0.0;
+            out["curvature_inv_mm"] = 0.0;
+            out["armed"]            = false;
+        }
+
+        std_msgs::msg::String out_msg;
+        out_msg.data = out.dump();
+        safe_error_pub_->publish(out_msg);
+    }
+
+    // ── Publish zero error helper ────────────────────────────────────────────
+    void publish_zero() {
+        publish_safe_errors(0.0, 300.0, 0.0, 0.0);
+    }
+
+    // ── Watchdog: zero errors if no error received within timeout ─────────────
+    void watchdog_callback() {
+        if (!has_received_) return;
+
+        double age_s = (this->get_clock()->now() - last_msg_time_).seconds();
+        if (age_s > timeout_s_) {
+            if (armed_) {
+                armed_ = false;
+                RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                    "control_error stale (%.2fs). AUTO-DISARMED. Zero errors published.", age_s);
+            }
+            publish_zero();
+        }
+    }
+
+    // ── ROS2 interfaces ──────────────────────────────────────────────────────
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr          safe_error_pub_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr        control_error_sub_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr        cmd_sub_;
+    rclcpp::TimerBase::SharedPtr                                  watchdog_timer_;
+
+    // ── Safety state ─────────────────────────────────────────────────────────
+    bool          armed_         = false;  // SAFE MODE: must arm explicitly before motion
+
+    // ── Staleness tracking ───────────────────────────────────────────────────
+    bool          has_received_  = false;
+    rclcpp::Time  last_msg_time_{0, 0, RCL_ROS_TIME};
+
+    // ── Cached parameters ────────────────────────────────────────────────────
+    double timeout_s_;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+int main(int argc, char* argv[]) {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<PurePursuitNode>();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}

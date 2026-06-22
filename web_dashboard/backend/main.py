@@ -90,7 +90,10 @@ class WebBridgeNode(Node):
             SetParameters,
             '/video_publisher_node/set_parameters'
         )
-        
+
+        # Publisher for ARM / DISARM commands to the third-party controller
+        self.avs_cmd_pub_ = self.create_publisher(String, '/avs/cmd', 10)
+
         logger.info("ROS2 WebBridgeNode initialized.")
         logger.info("Subscribed to /camera/image_raw/compressed and /avs/telemetry")
 
@@ -100,23 +103,17 @@ class WebBridgeNode(Node):
 
     def telemetry_callback(self, msg):
         global latest_telemetry
-        logger.info(f"WebBridgeNode received telemetry from ROS2: {len(msg.data)} bytes")
         try:
             data = json.loads(msg.data)
             latest_telemetry = data
             
             # Broadcast to all connected WebSocket clients
             if connected_clients and loop:
-                logger.info(f"Broadcasting telemetry to {len(connected_clients)} WebSocket clients.")
                 for client in list(connected_clients):
                     asyncio.run_coroutine_threadsafe(
                         client.send_json(data),
                         loop
                     )
-            elif not connected_clients:
-                logger.info("No WebSocket clients connected to broadcast telemetry to.")
-            elif not loop:
-                logger.warning("Event loop is None, cannot broadcast telemetry.")
         except Exception as e:
             logger.error(f"Error parsing/broadcasting telemetry: {e}")
 
@@ -215,6 +212,55 @@ CLASS_NAMES = [
     "start", "stop-line", "turn-lane", "vehicle"
 ]
 
+def process_frame(jpeg_frame, telemetry):
+    if jpeg_frame is None:
+        return None
+    # Decode JPEG frame to OpenCV image
+    nparr = np.frombuffer(jpeg_frame, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    if img is not None:
+        if telemetry and "objects" in telemetry:
+            overlay = img.copy()
+            for obj in telemetry["objects"]:
+                label = obj.get("label", 0)
+                prob = obj.get("prob", 0.0)
+                box = obj.get("box", [0, 0, 0, 0])
+                polygons = obj.get("polygons", [])
+                
+                color = CLASS_COLORS[label % len(CLASS_COLORS)]
+                
+                # Draw transparency mask polygons
+                for poly in polygons:
+                    pts = np.array(poly, dtype=np.int32)
+                    if len(pts) > 0:
+                        cv2.fillPoly(overlay, [pts], color)
+                
+                # Draw bounding box
+                x, y, w, h = map(int, box)
+                cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
+                
+                # Draw text label
+                text = f"{CLASS_NAMES[label]} {prob*100:.1f}%"
+                label_size, base_line = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                label_w, label_h = label_size
+                
+                ty = y - label_h - 2
+                if ty < 0: ty = 0
+                tx = x
+                if tx + label_w > img.shape[1]: tx = img.shape[1] - label_w
+                
+                cv2.rectangle(img, (tx, ty), (tx + label_w, ty + label_h + base_line), color, -1)
+                cv2.putText(img, text, (tx, ty + label_h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            
+            # Blend the transparency mask overlay
+            cv2.addWeighted(overlay, 0.4, img, 0.6, 0, img)
+        
+        # Re-encode to JPEG
+        _, jpeg_bytes = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        return jpeg_bytes.tobytes()
+    return jpeg_frame
+
 # Live MJPEG Stream Endpoint with Real-Time Overlay Rendering
 async def frame_generator():
     global latest_jpeg_frame, latest_telemetry
@@ -227,58 +273,12 @@ async def frame_generator():
             if latest_jpeg_frame is not None and latest_jpeg_frame != last_processed_frame:
                 last_processed_frame = latest_jpeg_frame
                 
-                # Decode JPEG frame to OpenCV image
-                nparr = np.frombuffer(latest_jpeg_frame, np.uint8)
-                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                # Run the heavy OpenCV processing in a separate thread pool to keep the event loop responsive
+                frame_data = await asyncio.to_thread(process_frame, latest_jpeg_frame, latest_telemetry)
                 
-                if img is not None:
-                    telemetry = latest_telemetry
-                    if telemetry and "objects" in telemetry:
-                        overlay = img.copy()
-                        for obj in telemetry["objects"]:
-                            label = obj.get("label", 0)
-                            prob = obj.get("prob", 0.0)
-                            box = obj.get("box", [0, 0, 0, 0])
-                            polygons = obj.get("polygons", [])
-                            
-                            color = CLASS_COLORS[label % len(CLASS_COLORS)]
-                            
-                            # Draw transparency mask polygons
-                            for poly in polygons:
-                                pts = np.array(poly, dtype=np.int32)
-                                if len(pts) > 0:
-                                    cv2.fillPoly(overlay, [pts], color)
-                            
-                            # Draw bounding box
-                            x, y, w, h = map(int, box)
-                            cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
-                            
-                            # Draw text label
-                            text = f"{CLASS_NAMES[label]} {prob*100:.1f}%"
-                            label_size, base_line = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-                            label_w, label_h = label_size
-                            
-                            ty = y - label_h - 2
-                            if ty < 0: ty = 0
-                            tx = x
-                            if tx + label_w > img.shape[1]: tx = img.shape[1] - label_w
-                            
-                            cv2.rectangle(img, (tx, ty), (tx + label_w, ty + label_h + base_line), color, -1)
-                            cv2.putText(img, text, (tx, ty + label_h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-                        
-                        # Blend the transparency mask overlay
-                        cv2.addWeighted(overlay, 0.4, img, 0.6, 0, img)
-                    
-
-                    # Re-encode to JPEG
-                    _, jpeg_bytes = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 80])
-                    frame_data = jpeg_bytes.tobytes()
-                    
+                if frame_data is not None:
                     yield (b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
-                else:
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + latest_jpeg_frame + b'\r\n')
             # Check for new frames at ~30 FPS
             await asyncio.sleep(0.033)
     except asyncio.CancelledError:
@@ -323,6 +323,23 @@ async def get_config():
     return load_config()
 
 # API to switch running modes (camera vs video)
+@app.post("/api/arm")
+async def arm_vehicle(cmd: str = Query(..., description="'arm' or 'disarm'")):
+    if cmd not in ["arm", "disarm"]:
+        return {"status": "error", "message": "Invalid cmd. Use 'arm' or 'disarm'"}
+    if bridge_node is None:
+        return {"status": "error", "message": "ROS2 bridge node not ready"}
+    try:
+        from std_msgs.msg import String as StringMsg
+        msg = StringMsg()
+        msg.data = f'{{"cmd": "{cmd}"}}'
+        bridge_node.avs_cmd_pub_.publish(msg)
+        logger.info(f"Published /avs/cmd: {msg.data}")
+        return {"status": "ok", "cmd": cmd}
+    except Exception as e:
+        logger.error(f"Error publishing arm cmd: {e}")
+        return {"status": "error", "message": str(e)}
+
 @app.post("/api/mode")
 async def change_mode(mode: str = Query(..., description="Run mode: 'camera' or 'video'")):
     if mode not in ["camera", "video"]:

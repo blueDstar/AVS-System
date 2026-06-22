@@ -335,6 +335,53 @@ function setupControlListeners() {
             });
     });
 
+    // ── ARM / DISARM vehicle motion ───────────────────────────────────────────
+    const btnArm      = document.getElementById("btn-arm");
+    const btnDisarm   = document.getElementById("btn-disarm");
+    const armBadge    = document.getElementById("arm-status-badge");
+    const armPanel    = document.querySelector(".arm-panel");
+
+    function setArmState(armed) {
+        if (armed) {
+            // Visual: ARMED state
+            armBadge.textContent  = "ARMED";
+            armBadge.className    = "badge armed";
+            armPanel.classList.add("armed");
+            btnArm.disabled       = true;
+            btnDisarm.disabled    = false;
+        } else {
+            // Visual: DISARMED state
+            armBadge.textContent  = "DISARMED";
+            armBadge.className    = "badge idle";
+            armPanel.classList.remove("armed");
+            btnArm.disabled       = false;
+            btnDisarm.disabled    = true;
+        }
+    }
+
+    async function sendArmCmd(cmd) {
+        try {
+            const res  = await fetch(`/api/arm?cmd=${cmd}`, { method: "POST" });
+            const data = await res.json();
+            if (data.status === "ok") {
+                setArmState(cmd === "arm");
+            } else {
+                alert(`ARM command failed: ${data.message}`);
+            }
+        } catch (err) {
+            console.error("ARM/DISARM fetch error:", err);
+            alert("Failed to reach server. Check connection.");
+        }
+    }
+
+    btnArm.addEventListener("click",    () => sendArmCmd("arm"));
+    btnDisarm.addEventListener("click", () => sendArmCmd("disarm"));
+
+    // Initialize to DISARMED state on page load
+    setArmState(false);
+
+
+
     // Change Run Mode selector dropdown
     const selectMode = document.getElementById("select-mode");
     const activeSourceDisplay = document.getElementById("active-source-display");

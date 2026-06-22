@@ -16,8 +16,8 @@ class NCNNInferenceNode : public rclcpp::Node {
 public:
     NCNNInferenceNode() : Node("ncnn_inference_node") {
         // Declare ROS2 parameters
-        this->declare_parameter<std::string>("model_param_path", "/workspace/models/yolo26-best_ncnn_model/model.ncnn.param");
-        this->declare_parameter<std::string>("model_bin_path", "/workspace/models/yolo26-best_ncnn_model/model.ncnn.bin");
+        this->declare_parameter<std::string>("model_param_path", "/workspace/models/yolo26-best_ncnn_model_int8/model.ncnn.param");
+        this->declare_parameter<std::string>("model_bin_path", "/workspace/models/yolo26-best_ncnn_model_int8/model.ncnn.bin");
         this->declare_parameter<float>("prob_threshold", 0.25f);
         this->declare_parameter<float>("nms_threshold", 0.45f);
         this->declare_parameter<std::string>("input_topic", "/camera/image_raw");
@@ -46,7 +46,7 @@ public:
 
         // Create subscription to raw camera images
         image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            input_topic, 10,
+            input_topic, 1,
             std::bind(&NCNNInferenceNode::image_callback, this, std::placeholders::_1)
         );
 

@@ -10,6 +10,7 @@ YOLO26Seg::YOLO26Seg() {
     net.opt.use_fp16_storage = true;
     net.opt.use_fp16_arithmetic = true;
     net.opt.use_packing_layout = true;
+    net.opt.use_int8_inference = true;
     net.opt.num_threads = 4; // Use all 4 Cortex-A76 cores of Pi 5
 }
 

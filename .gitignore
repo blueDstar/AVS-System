@@ -1,7 +1,29 @@
-**.mp4
-**__pycache__
-**.tar
-test.py
+# ROS2 build artifacts
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
+build/
+install/
+log/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.so
+
+# Large/generated files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.bag
+*.db3
+*.tar
+*.zip
+
+# Local/system
+.vscode/
+.cache/
+.DS_Store
+core

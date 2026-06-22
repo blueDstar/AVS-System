@@ -1,0 +1,18 @@
+services:
+  avs_perception:
+    restart: unless-stopped
+    command: >
+      bash -lc "
+      echo '[avs_perception] keepalive mode: container stays running';
+      mkdir -p /workspace/ros2_ws;
+      cd /workspace/ros2_ws;
+      source /opt/ros/humble/setup.bash;
+      export ROS_DOMAIN_ID=20;
+      tail -f /dev/null
+      "
+
+  video_publisher:
+    restart: unless-stopped
+
+  web_dashboard:
+    restart: unless-stopped

@@ -2,6 +2,8 @@
 #include <string>
 #include <chrono>
 #include <mutex>
+#include <thread>
+#include <atomic>
 #include <unistd.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -90,10 +92,60 @@ public:
         );
 
         RCLCPP_INFO(this->get_logger(), "Publisher started. Publishing to topic: %s at %.1f FPS", publish_topic.c_str(), pub_fps);
+
+        // Start the background camera capture thread.
+        // This thread reads frames as fast as the camera produces them and
+        // stores only the latest in latest_frame_ (overwrite buffer, size=1).
+        // Decouples cap_.read() (can block) from the publishing timer.
+        capture_running_ = true;
+        capture_thread_ = std::thread(&VideoPublisherNode::capture_loop, this);
+    }
+
+    ~VideoPublisherNode() {
+        // Signal capture thread to stop and wait for it to finish
+        capture_running_ = false;
+        if (capture_thread_.joinable()) {
+            capture_thread_.join();
+        }
     }
 
 private:
-    // Open a video file or camera device with proper V4L2 configuration
+    // ── Background capture thread ─────────────────────────────────────────────
+    // Runs continuously and independently of the publish timer.
+    // Always overwrites latest_frame_ with the newest camera frame (buffer size=1).
+    // For video files: handles loop/end internally.
+    void capture_loop() {
+        while (capture_running_) {
+            cv::Mat frame;
+            bool ok = false;
+            {
+                std::lock_guard<std::mutex> lock(cap_mutex_);
+                ok = cap_.read(frame);
+                if (!ok) {
+                    // Video file: handle end-of-file
+                    if (!is_camera_source_ && loop_) {
+                        cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
+                        ok = cap_.read(frame);
+                    } else if (!is_camera_source_) {
+                        RCLCPP_INFO(this->get_logger(), "Video end reached. Stopping capture thread.");
+                        capture_running_ = false;
+                        break;
+                    }
+                    // Camera frame drop: skip silently and try again
+                }
+            }
+
+            if (ok && !frame.empty()) {
+                // Overwrite buffer — always keep only the latest frame
+                std::lock_guard<std::mutex> lock(frame_mutex_);
+                latest_frame_ = std::move(frame);
+                new_frame_available_ = true;
+            }
+            // No sleep: run as fast as the camera hardware allows
+        }
+    }
+
+    // ── Video source management ───────────────────────────────────────────────
     bool open_source(const std::string& path) {
         cv::VideoCapture new_cap;
 
@@ -224,29 +276,16 @@ private:
     }
 
     void timer_callback() {
-        std::lock_guard<std::mutex> lock(cap_mutex_);
-
+        // Read the latest frame from the shared buffer (written by capture_loop).
+        // If no new frame is available yet, skip this tick.
         cv::Mat frame;
-        if (!cap_.read(frame)) {
-            if (!is_camera_source_ && loop_) {
-                RCLCPP_INFO(this->get_logger(), "Video end reached. Looping back to start.");
-                cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
-                if (!cap_.read(frame)) {
-                    RCLCPP_ERROR(this->get_logger(), "Failed to read frame after resetting video!");
-                    return;
-                }
-            } else if (!is_camera_source_) {
-                RCLCPP_INFO(this->get_logger(), "Video end reached. Stopping timer.");
-                timer_->cancel();
-                return;
-            } else {
-                // Camera frame drop - skip silently
-                return;
+        {
+            std::lock_guard<std::mutex> lock(frame_mutex_);
+            if (!new_frame_available_ || latest_frame_.empty()) {
+                return;  // No fresh frame — skip publish tick
             }
-        }
-
-        if (frame.empty()) {
-            return;
+            frame = latest_frame_.clone();  // cheap for 640x480 BGR
+            new_frame_available_ = false;   // mark consumed
         }
 
         auto timestamp = this->now();
@@ -280,7 +319,16 @@ private:
     int cam_width_ = 640;
     int cam_height_ = 480;
     int cam_fps_ = 30;
-    std::mutex cap_mutex_;
+
+    // ── Shared frame buffer (overwrite, size=1) ───────────────────────────────
+    // Written by capture_loop(), read by timer_callback().
+    cv::Mat             latest_frame_;
+    std::mutex          frame_mutex_;                    // guards latest_frame_
+    std::atomic<bool>   new_frame_available_{false};     // flag: fresh frame ready
+    std::atomic<bool>   capture_running_{false};         // controls capture_loop
+    std::thread         capture_thread_;                 // background reader
+
+    std::mutex cap_mutex_;  // guards cv::VideoCapture cap_
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
     rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_pub_;
     rclcpp::TimerBase::SharedPtr timer_;

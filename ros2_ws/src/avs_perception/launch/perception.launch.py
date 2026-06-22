@@ -19,12 +19,12 @@ def generate_launch_description():
         # ── Declare arguments ──────────────────────────────────────────────
         DeclareLaunchArgument(
             'model_param_path',
-            default_value='/workspace/models/yolo26-best_ncnn_model/model.ncnn.param',
+            default_value='/workspace/models/yolo26-best_ncnn_model_int8/model.ncnn.param',
             description='Path to NCNN model param file'
         ),
         DeclareLaunchArgument(
             'model_bin_path',
-            default_value='/workspace/models/yolo26-best_ncnn_model/model.ncnn.bin',
+            default_value='/workspace/models/yolo26-best_ncnn_model_int8/model.ncnn.bin',
             description='Path to NCNN model bin file'
         ),
         DeclareLaunchArgument(
@@ -93,9 +93,9 @@ def generate_launch_description():
             output='screen',
             parameters=[{
                 'calibration_file_path': '/workspace/config/calibration.json',
-                'lookahead_T_preview':   0.5,    # seconds
-                'lookahead_d_min_mm':    150.0,  # mm
-                'lookahead_d_max_mm':    600.0,  # mm
+                'lookahead_T_preview':   0.15,   # seconds
+                'lookahead_d_min_mm':    120.0,  # mm
+                'lookahead_d_max_mm':    450.0,  # mm
             }]
         ),
 
@@ -112,23 +112,6 @@ def generate_launch_description():
                 'turn_proximity_mm': 500.0,  # mm — distance to arm turn transition
                 'turn_done_mm':      200.0,  # mm — past-turn detection threshold
                 'theta_done_rad':    0.1,    # rad — heading threshold for turn completion
-            }]
-        ),
-
-        # ── Pure Pursuit Controller Node ───────────────────────────
-        # Converts /avs/control_error → /cmd_vel (geometry_msgs/Twist)
-        Node(
-            package='avs_perception',
-            executable='pure_pursuit_node',
-            name='pure_pursuit_node',
-            output='screen',
-            parameters=[{
-                'v_max':    0.5,    # m/s — max forward speed
-                'v_min':    0.1,    # m/s — min speed
-                'k_c':      500.0,  # curvature penalty factor
-                'omega_max': 2.0,   # rad/s — max angular velocity
-                'Ld_min_m':  0.05,  # m — minimum look-ahead guard
-                'control_error_timeout_s': 0.5,
             }]
         ),
     ])

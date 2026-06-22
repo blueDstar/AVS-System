@@ -21,9 +21,9 @@ public:
     IPMTransformNode() : Node("ipm_transform_node") {
         // Declare ROS2 parameters
         this->declare_parameter<std::string>("calibration_file_path", "/workspace/config/calibration.json");
-        this->declare_parameter<double>("lookahead_T_preview", 0.5);   // seconds
-        this->declare_parameter<double>("lookahead_d_min_mm", 150.0);  // mm
-        this->declare_parameter<double>("lookahead_d_max_mm", 600.0);  // mm
+        this->declare_parameter<double>("lookahead_T_preview", 0.15);   // seconds
+        this->declare_parameter<double>("lookahead_d_min_mm", 120.0);  // mm
+        this->declare_parameter<double>("lookahead_d_max_mm", 450.0);  // mm
 
         calibration_file_path_ = this->get_parameter("calibration_file_path").as_string();
         T_preview_  = this->get_parameter("lookahead_T_preview").as_double();
@@ -57,10 +57,10 @@ public:
     }
 
 private:
-    // Odometry callback — extract linear speed (mm/s) from /odom_raw
+    // Odometry callback — extract linear speed from /odom_raw
+    // Note: linear.x is normalized (0-1), where 1.0 corresponds to 2.5 m/s (2500 mm/s)
     void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-        // linear.x is forward velocity in m/s → convert to mm/s
-        current_speed_mms_ = std::abs(msg->twist.twist.linear.x) * 1000.0;
+        current_speed_mms_ = std::abs(msg->twist.twist.linear.x) * 2500.0;
     }
 
     // Compute dynamic look-ahead distance based on current speed
