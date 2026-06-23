@@ -12,8 +12,7 @@ __pycache__/
 *.pyo
 *.so
 
-# Large/generated files
-*.mp4
+# Large/generated files - ignore by default
 *.avi
 *.mov
 *.mkv
@@ -21,6 +20,13 @@ __pycache__/
 *.db3
 *.tar
 *.zip
+
+# Ignore mp4 by default, but allow demo drive videos
+*.mp4
+!ros2_ws/demo_data/
+!ros2_ws/demo_data/drive_record/
+!ros2_ws/demo_data/drive_record/videos/
+!ros2_ws/demo_data/drive_record/videos/*.mp4
 
 # Local/system
 .vscode/
