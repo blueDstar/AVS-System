@@ -13,7 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
         { name: "loadSystemConfig", fn: loadSystemConfig },
         { name: "setupControlListeners", fn: setupControlListeners },
         { name: "checkStreamActive", fn: checkStreamActive },
-        { name: "initViewToggle", fn: initViewToggle },
+        { name: "initPageToggle", fn: initPageToggle },
+        { name: "initControlPage", fn: initControlPage },
         { name: "initCalibration", fn: initCalibration }
     ];
 
@@ -276,6 +277,7 @@ function updateDashboard(data) {
         perfChart.update('none'); // Update without full animation for performance
     }
     drawBEV(data);
+    updateControlPage(data);
 }
 
 // Toggle Stream state UI indicators
@@ -460,8 +462,309 @@ function checkStreamActive() {
     };
 }
 
-function initViewToggle() {
-    // No-op: IPM Warp view mode removed
+function initPageToggle() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const pages = {
+        'main-page': document.getElementById('main-page'),
+        'control-page': document.getElementById('control-page')
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            const selected = pages[tab.dataset.page];
+            if (selected) selected.classList.remove('hidden');
+        });
+    });
+}
+
+let controlChart = null;
+const controlHistory = { linear: [], angular: [], labels: [] };
+const odomPathPoints = [];
+let currentControlMode = 'auto';
+
+function initControlPage() {
+    const btnAuto = document.getElementById('btn-mode-auto');
+    const btnManual = document.getElementById('btn-mode-manual');
+    const btnSendManual = document.getElementById('btn-send-manual-cmd');
+    const btnSaveParams = document.getElementById('btn-save-control-params');
+    const selectStrategy = document.getElementById('select-control-strategy');
+    const manualLinear = document.getElementById('input-manual-linear');
+    const manualAngular = document.getElementById('input-manual-angular');
+
+    btnAuto.addEventListener('click', () => setControlMode('auto'));
+    btnManual.addEventListener('click', () => setControlMode('manual'));
+    btnSendManual.addEventListener('click', () => sendManualCommand());
+    btnSaveParams.addEventListener('click', () => saveControlParams());
+    selectStrategy.addEventListener('change', () => setControlStrategy(selectStrategy.value));
+
+    updateManualControls();
+    initControlChart();
+    drawOdomPath(null);
+}
+
+function updateControlModeUI(mode) {
+    currentControlMode = mode;
+    const badge = document.getElementById('control-mode-badge');
+    const btnAuto = document.getElementById('btn-mode-auto');
+    const btnManual = document.getElementById('btn-mode-manual');
+
+    badge.innerText = mode === 'manual' ? 'MANUAL MODE' : 'AUTO MODE';
+    badge.className = mode === 'manual' ? 'badge success' : 'badge idle';
+    btnAuto.classList.toggle('active', mode === 'auto');
+    btnManual.classList.toggle('active', mode === 'manual');
+    updateManualControls();
+}
+
+function updateManualControls() {
+    const disabled = currentControlMode !== 'manual';
+    document.getElementById('input-manual-linear').disabled = disabled;
+    document.getElementById('input-manual-angular').disabled = disabled;
+    document.getElementById('btn-send-manual-cmd').disabled = disabled;
+}
+
+function initControlChart() {
+    const canvas = document.getElementById('control-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const ctx = canvas.getContext('2d');
+    controlChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Linear Velocity (m/s)',
+                    data: [],
+                    borderColor: '#00f2fe',
+                    backgroundColor: 'rgba(0, 242, 254, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Angular Velocity (rad/s)',
+                    data: [],
+                    borderColor: '#ff9a3c',
+                    backgroundColor: 'rgba(255, 154, 60, 0.12)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            scales: {
+                x: {
+                    ticks: { display: false },
+                    grid: { color: 'rgba(255,255,255,0.03)' }
+                },
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    title: { display: true, text: 'Linear m/s' },
+                    min: -2,
+                    max: 4,
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    title: { display: true, text: 'Angular rad/s' },
+                    min: -2,
+                    max: 2,
+                    grid: { drawOnChartArea: false }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#ffffff' } }
+            }
+        }
+    });
+}
+
+function updateControlPage(data) {
+    if (!data) return;
+
+    if (data.odom) {
+        const pose = data.odom.pose.position;
+        const orientation = data.odom.pose.orientation;
+        const yaw = quaternionToYaw(orientation);
+        const speed = Math.sqrt(
+            Math.pow(data.odom.twist.linear.x, 2) + Math.pow(data.odom.twist.linear.y, 2)
+        );
+
+        document.getElementById('val-odom-x').innerText = `${pose.x.toFixed(3)} m`;
+        document.getElementById('val-odom-y').innerText = `${pose.y.toFixed(3)} m`;
+        document.getElementById('val-odom-yaw').innerText = `${yaw.toFixed(1)}°`;
+        document.getElementById('val-odom-speed').innerText = `${speed.toFixed(3)} m/s`;
+
+        odomPathPoints.push({ x: pose.x, y: pose.y });
+        if (odomPathPoints.length > 200) odomPathPoints.shift();
+        drawOdomPath();
+    }
+
+    if (data.cmd_vel) {
+        const linear = data.cmd_vel.linear.x;
+        const angular = data.cmd_vel.angular.z;
+        document.getElementById('val-cmd-linear').innerText = `${linear.toFixed(3)} m/s`;
+        document.getElementById('val-cmd-angular').innerText = `${angular.toFixed(3)} rad/s`;
+
+        updateControlHistory(linear, angular);
+    }
+}
+
+function updateControlHistory(linear, angular) {
+    const timestamp = new Date().toLocaleTimeString();
+    controlHistory.labels.push(timestamp);
+    controlHistory.linear.push(linear);
+    controlHistory.angular.push(angular);
+    if (controlHistory.labels.length > 50) {
+        controlHistory.labels.shift();
+        controlHistory.linear.shift();
+        controlHistory.angular.shift();
+    }
+    if (controlChart) {
+        controlChart.data.labels = controlHistory.labels;
+        controlChart.data.datasets[0].data = controlHistory.linear;
+        controlChart.data.datasets[1].data = controlHistory.angular;
+        controlChart.update('none');
+    }
+}
+
+function drawOdomPath() {
+    const canvas = document.getElementById('odom-path-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(10, 7, 20, 0.95)';
+    ctx.fillRect(0, 0, w, h);
+
+    if (!odomPathPoints.length) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px sans-serif';
+        ctx.fillText('Waiting for /odom updates...', 20, 30);
+        return;
+    }
+
+    const xs = odomPathPoints.map(pt => pt.x);
+    const ys = odomPathPoints.map(pt => pt.y);
+    const minX = Math.min(...xs, -1);
+    const maxX = Math.max(...xs, 1);
+    const minY = Math.min(...ys, -1);
+    const maxY = Math.max(...ys, 1);
+    const pad = 0.2;
+    const width = maxX - minX || 1;
+    const height = maxY - minY || 1;
+    const scaleX = (w - 40) / (width * (1 + pad));
+    const scaleY = (h - 40) / (height * (1 + pad));
+    const scale = Math.min(scaleX, scaleY);
+    const offsetX = w / 2 - ((minX + maxX) / 2) * scale;
+    const offsetY = h / 2 + ((minY + maxY) / 2) * scale;
+
+    ctx.strokeStyle = 'rgba(0, 242, 254, 0.75)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    odomPathPoints.forEach((pt, idx) => {
+        const cx = offsetX + pt.x * scale;
+        const cy = offsetY - pt.y * scale;
+        if (idx === 0) ctx.moveTo(cx, cy);
+        else ctx.lineTo(cx, cy);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    const last = odomPathPoints[odomPathPoints.length - 1];
+    const endX = offsetX + last.x * scale;
+    const endY = offsetY - last.y * scale;
+    ctx.arc(endX, endY, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText('Vehicle', endX + 8, endY - 8);
+}
+
+function quaternionToYaw(orientation) {
+    const { x, y, z, w } = orientation;
+    const siny = 2.0 * (w * z + x * y);
+    const cosy = 1.0 - 2.0 * (y * y + z * z);
+    return Math.atan2(siny, cosy) * (180 / Math.PI);
+}
+
+function setControlMode(mode) {
+    fetch(`/api/control_mode?mode=${mode}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                updateControlModeUI(mode);
+            } else {
+                alert(`Failed to set control mode: ${data.message}`);
+            }
+        })
+        .catch(err => {
+            console.error('Control mode error:', err);
+            alert('Unable to set control mode.');
+        });
+}
+
+function sendManualCommand() {
+    const linear = parseFloat(document.getElementById('input-manual-linear').value);
+    const angular = parseFloat(document.getElementById('input-manual-angular').value);
+    fetch(`/api/manual_control?linear=${linear}&angular=${angular}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'ok') {
+                alert(`Manual command failed: ${data.message}`);
+            }
+        })
+        .catch(err => {
+            console.error('Manual control error:', err);
+            alert('Unable to send manual command.');
+        });
+}
+
+function saveControlParams() {
+    const kp = parseFloat(document.getElementById('input-kp').value);
+    const ki = parseFloat(document.getElementById('input-ki').value);
+    const kd = parseFloat(document.getElementById('input-kd').value);
+
+    fetch(`/api/control_params?kp=${kp}&ki=${ki}&kd=${kd}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                alert('Control parameters saved.');
+            } else {
+                alert(`Failed to save params: ${data.message}`);
+            }
+        })
+        .catch(err => {
+            console.error('Control params error:', err);
+            alert('Unable to save control parameters.');
+        });
+}
+
+function setControlStrategy(strategy) {
+    fetch(`/api/control_strategy?strategy=${strategy}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'ok') {
+                alert(`Failed to set strategy: ${data.message}`);
+            }
+        })
+        .catch(err => {
+            console.error('Control strategy error:', err);
+            alert('Unable to set control strategy.');
+        });
 }
 
 // --- CALIBRATION & BEV INTEGRATION ---

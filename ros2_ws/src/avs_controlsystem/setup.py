@@ -19,6 +19,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'drive_record_node = avs_controlsystem.drive_record_node:main',
             'pur_persuit_pd_mainlane_record = avs_controlsystem.pur_persuit_pd_mainlane_record:main',
             'pur_persuit_pd_mainlane_video_logger = avs_controlsystem.pur_persuit_pd_mainlane_video_logger:main',
             'pur_persuit_pd_mainlane_following_logger = avs_controlsystem.pur_persuit_pd_mainlane_following_logger:main',

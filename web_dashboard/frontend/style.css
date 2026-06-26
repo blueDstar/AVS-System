@@ -971,3 +971,204 @@ body {
     box-shadow: none;
 }
 
+/* ─── PAGE TABS ─────────────────────────────────────────────────────────── */
+.page-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tab-btn:hover {
+    background: rgba(138, 75, 243, 0.15);
+    border-color: var(--accent-indigo);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--accent-indigo) 0%, #a25df5 100%);
+    border-color: var(--accent-indigo);
+    color: #ffffff;
+    box-shadow: 0 0 15px var(--accent-indigo-glow);
+}
+
+/* ─── PAGE VISIBILITY ─────────────────────────────────────────────────── */
+.hidden {
+    display: none !important;
+}
+
+#main-page {
+    display: block;
+}
+
+#control-page {
+    display: block;
+}
+
+/* ─── CONTROL PAGE LAYOUT ─────────────────────────────────────────────── */
+.control-status-panel {
+    grid-column: 1 / -1;
+}
+
+.control-status-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+@media (max-width: 1200px) {
+    .control-status-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .control-status-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.status-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.status-card:hover {
+    background: rgba(138, 75, 243, 0.08);
+    border-color: rgba(138, 75, 243, 0.2);
+}
+
+.status-title {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.status-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-family: 'Courier New', monospace;
+}
+
+/* Control Panel Large */
+.control-panel-large {
+    grid-column: 1 / -1;
+}
+
+.control-panel-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 12px;
+}
+
+@media (max-width: 1024px) {
+    .control-panel-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+.control-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.control-column label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Gain Input Grid */
+.gain-input-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+.gain-input-grid label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.gain-input-grid input {
+    background: rgba(10, 7, 20, 0.6);
+    border: 1px solid var(--border-color);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #ffffff;
+    text-align: center;
+    margin-top: 4px;
+    transition: all 0.3s ease;
+}
+
+.gain-input-grid input:focus {
+    outline: none;
+    border-color: var(--accent-indigo);
+    background: rgba(138, 75, 243, 0.1);
+}
+
+/* Button Group Full Width */
+.button-group.full-width {
+    width: 100%;
+}
+
+.button-group.full-width .btn {
+    padding: 12px;
+}
+
+/* Path Canvas Holder */
+.path-panel {
+    grid-column: 1 / -1;
+}
+
+.path-canvas-holder {
+    width: 100%;
+    max-height: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(10, 7, 20, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 12px;
+}
+
+#odom-path-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+

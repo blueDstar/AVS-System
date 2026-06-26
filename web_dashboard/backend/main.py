@@ -17,6 +17,8 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import String
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Twist
 from rcl_interfaces.srv import SetParameters
 from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
 
@@ -29,6 +31,8 @@ app = FastAPI(title="AVS Perception Dashboard Bridge")
 # Global variables
 latest_jpeg_frame = None
 latest_telemetry = {}
+latest_odom = None
+latest_cmd_vel = None
 connected_clients: Set[WebSocket] = set()
 loop = None
 bridge_node = None
@@ -94,8 +98,36 @@ class WebBridgeNode(Node):
         # Publisher for ARM / DISARM commands to the third-party controller
         self.avs_cmd_pub_ = self.create_publisher(String, '/avs/cmd', 10)
 
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
+            10
+        )
+        self.cmd_vel_sub = self.create_subscription(
+            Twist,
+            '/cmd_vel',
+            self.cmd_vel_callback,
+            10
+        )
+        self.control_mode_pub_ = self.create_publisher(
+            String,
+            '/avs/control_mode',
+            10
+        )
+        self.manual_cmd_pub_ = self.create_publisher(
+            Twist,
+            '/cmd_vel',
+            10
+        )
+        self.control_param_pub_ = self.create_publisher(
+            String,
+            '/avs/control_params',
+            10
+        )
+
         logger.info("ROS2 WebBridgeNode initialized.")
-        logger.info("Subscribed to /camera/image_raw/compressed and /avs/telemetry")
+        logger.info("Subscribed to /camera/image_raw/compressed, /avs/telemetry, /odom, /cmd_vel")
 
     def image_callback(self, msg):
         global latest_jpeg_frame
@@ -105,17 +137,85 @@ class WebBridgeNode(Node):
         global latest_telemetry
         try:
             data = json.loads(msg.data)
-            latest_telemetry = data
+            payload = make_combined_payload(data)
+            latest_telemetry = payload
             
             # Broadcast to all connected WebSocket clients
             if connected_clients and loop:
-                for client in list(connected_clients):
-                    asyncio.run_coroutine_threadsafe(
-                        client.send_json(data),
-                        loop
-                    )
+                broadcast_telemetry(payload)
         except Exception as e:
             logger.error(f"Error parsing/broadcasting telemetry: {e}")
+
+    def odom_callback(self, msg):
+        global latest_odom
+        latest_odom = {
+            "header": {
+                "stamp": msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9,
+                "frame_id": msg.header.frame_id
+            },
+            "pose": {
+                "position": {
+                    "x": msg.pose.pose.position.x,
+                    "y": msg.pose.pose.position.y,
+                    "z": msg.pose.pose.position.z
+                },
+                "orientation": {
+                    "x": msg.pose.pose.orientation.x,
+                    "y": msg.pose.pose.orientation.y,
+                    "z": msg.pose.pose.orientation.z,
+                    "w": msg.pose.pose.orientation.w
+                }
+            },
+            "twist": {
+                "linear": {
+                    "x": msg.twist.twist.linear.x,
+                    "y": msg.twist.twist.linear.y,
+                    "z": msg.twist.twist.linear.z
+                },
+                "angular": {
+                    "x": msg.twist.twist.angular.x,
+                    "y": msg.twist.twist.angular.y,
+                    "z": msg.twist.twist.angular.z
+                }
+            }
+        }
+        if connected_clients and loop:
+            broadcast_telemetry(make_combined_payload(latest_telemetry))
+
+    def cmd_vel_callback(self, msg):
+        global latest_cmd_vel
+        latest_cmd_vel = {
+            "linear": {
+                "x": msg.linear.x,
+                "y": msg.linear.y,
+                "z": msg.linear.z
+            },
+            "angular": {
+                "x": msg.angular.x,
+                "y": msg.angular.y,
+                "z": msg.angular.z
+            }
+        }
+        if connected_clients and loop:
+            broadcast_telemetry(make_combined_payload(latest_telemetry))
+
+
+def make_combined_payload(base_data=None):
+    payload = {}
+    if isinstance(base_data, dict):
+        payload.update(base_data)
+    if latest_odom is not None:
+        payload["odom"] = latest_odom
+    if latest_cmd_vel is not None:
+        payload["cmd_vel"] = latest_cmd_vel
+    return payload
+
+
+def broadcast_telemetry(payload):
+    global latest_telemetry
+    latest_telemetry = payload
+    for client in list(connected_clients):
+        asyncio.run_coroutine_threadsafe(client.send_json(payload), loop)
 
 # ROS2 background runner thread
 def run_ros2():
@@ -443,6 +543,78 @@ async def change_source(video_name: str = Query(..., description="Name of video 
     })
     logger.info(f"Requested video source change to: {video_path}")
     return {"status": "success", "video_path": video_path}
+
+@app.post("/api/control_mode")
+async def set_control_mode(mode: str = Query(..., description="Control mode: 'auto' or 'manual'")):
+    if mode not in ["auto", "manual"]:
+        return {"status": "error", "message": "Invalid control mode. Use 'auto' or 'manual'"}
+    if bridge_node is None:
+        return {"status": "error", "message": "ROS2 bridge node not ready"}
+    try:
+        msg = String()
+        msg.data = json.dumps({"control_mode": mode})
+        bridge_node.control_mode_pub_.publish(msg)
+        logger.info(f"Published control mode: {mode}")
+        return {"status": "ok", "control_mode": mode}
+    except Exception as e:
+        logger.error(f"Error setting control mode: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/manual_control")
+async def manual_control(
+    linear: float = Query(0.0, description="Manual linear velocity in m/s"),
+    angular: float = Query(0.0, description="Manual angular velocity in rad/s")
+):
+    if bridge_node is None:
+        return {"status": "error", "message": "ROS2 bridge node not ready"}
+    try:
+        twist = Twist()
+        twist.linear.x = linear
+        twist.linear.y = 0.0
+        twist.linear.z = 0.0
+        twist.angular.x = 0.0
+        twist.angular.y = 0.0
+        twist.angular.z = angular
+        bridge_node.manual_cmd_pub_.publish(twist)
+        logger.info(f"Published manual cmd_vel: linear={linear}, angular={angular}")
+        return {"status": "ok", "linear": linear, "angular": angular}
+    except Exception as e:
+        logger.error(f"Error publishing manual control: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/control_params")
+async def set_control_params(
+    kp: float = Query(..., description="Proportional gain Kp"),
+    ki: float = Query(..., description="Integral gain Ki"),
+    kd: float = Query(..., description="Derivative gain Kd")
+):
+    if bridge_node is None:
+        return {"status": "error", "message": "ROS2 bridge node not ready"}
+    try:
+        msg = String()
+        msg.data = json.dumps({"control_params": {"kp": kp, "ki": ki, "kd": kd}})
+        bridge_node.control_param_pub_.publish(msg)
+        logger.info(f"Published control params: kp={kp}, ki={ki}, kd={kd}")
+        return {"status": "ok", "kp": kp, "ki": ki, "kd": kd}
+    except Exception as e:
+        logger.error(f"Error publishing control params: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/control_strategy")
+async def set_control_strategy(strategy: str = Query(..., description="Control strategy: pd/backstepping/sliding")):
+    if strategy not in ["pd", "backstepping", "sliding"]:
+        return {"status": "error", "message": "Invalid strategy. Use 'pd', 'backstepping', or 'sliding'"}
+    if bridge_node is None:
+        return {"status": "error", "message": "ROS2 bridge node not ready"}
+    try:
+        msg = String()
+        msg.data = json.dumps({"strategy": strategy})
+        bridge_node.control_param_pub_.publish(msg)
+        logger.info(f"Published control strategy: {strategy}")
+        return {"status": "ok", "strategy": strategy}
+    except Exception as e:
+        logger.error(f"Error publishing control strategy: {e}")
+        return {"status": "error", "message": str(e)}
 
 # API to get current calibration
 @app.get("/api/calibration")

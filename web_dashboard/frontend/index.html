@@ -23,10 +23,15 @@
                 <span class="status-label">SYSTEM STATUS:</span>
                 <span id="sys-status" class="status-value success">ONLINE</span>
             </div>
+            <div class="page-tabs">
+                <button class="tab-btn active" data-page="main-page">Perception</button>
+                <button class="tab-btn" data-page="control-page">Control</button>
+            </div>
         </header>
 
-        <!-- MAIN DASHBOARD GRID -->
-        <main class="dashboard-grid">
+        <div id="main-page">
+            <!-- MAIN DASHBOARD GRID -->
+            <main class="dashboard-grid">
             
             <!-- LEFT PANEL: STREAM VIEW -->
             <section class="panel main-stream-panel">
@@ -238,6 +243,116 @@
                         <span class="detection-class"><span class="class-dot turn-lane"></span>Turn Lane</span>
                         <span class="detection-count" id="count-turn-lane">0</span>
                     </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="control-page" class="hidden">
+        <main class="dashboard-grid">
+            <section class="panel control-status-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">🕹️</span> Vehicle Control Center</h2>
+                    <span id="control-mode-badge" class="badge idle">AUTO MODE</span>
+                </div>
+                <div class="control-status-grid">
+                    <div class="status-card">
+                        <span class="status-title">Odom X</span>
+                        <span id="val-odom-x" class="status-value">0.00 m</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-title">Odom Y</span>
+                        <span id="val-odom-y" class="status-value">0.00 m</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-title">Odom Yaw</span>
+                        <span id="val-odom-yaw" class="status-value">0.00°</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-title">Odom Speed</span>
+                        <span id="val-odom-speed" class="status-value">0.00 m/s</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-title">CmdVel Linear</span>
+                        <span id="val-cmd-linear" class="status-value">0.00 m/s</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-title">CmdVel Angular</span>
+                        <span id="val-cmd-angular" class="status-value">0.00 rad/s</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel control-panel-large">
+                <div class="panel-header">
+                    <h2><span class="icon">⚙️</span> Control Strategy & Manual Override</h2>
+                </div>
+                <div class="control-panel-body">
+                    <div class="control-column">
+                        <div class="control-group">
+                            <label>Control Mode</label>
+                            <div class="button-group full-width">
+                                <button id="btn-mode-auto" class="btn secondary active">Auto</button>
+                                <button id="btn-mode-manual" class="btn secondary">Manual</button>
+                            </div>
+                            <p class="slider-hint">Switch between automatic controller and manual joystick-style command.</p>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="select-control-strategy">Controller Strategy</label>
+                            <select id="select-control-strategy" class="custom-select">
+                                <option value="pd">PID / PD</option>
+                                <option value="backstepping">Backstepping</option>
+                                <option value="sliding">Sliding Mode</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label-row">
+                                <span>PD Gains</span>
+                            </div>
+                            <div class="gain-input-grid">
+                                <label>Kp <input id="input-kp" type="number" step="0.01" value="1.00"></label>
+                                <label>Ki <input id="input-ki" type="number" step="0.01" value="0.00"></label>
+                                <label>Kd <input id="input-kd" type="number" step="0.01" value="0.10"></label>
+                            </div>
+                            <button id="btn-save-control-params" class="btn primary">Save Control Params</button>
+                        </div>
+                    </div>
+
+                    <div class="control-column">
+                        <div class="control-group">
+                            <label>Manual Velocity Command</label>
+                            <div class="gain-input-grid">
+                                <label>Linear <input id="input-manual-linear" type="number" step="0.05" value="0.00"></label>
+                                <label>Angular <input id="input-manual-angular" type="number" step="0.05" value="0.00"></label>
+                            </div>
+                            <button id="btn-send-manual-cmd" class="btn primary">Send Manual Command</button>
+                        </div>
+                        <div class="control-group">
+                            <p class="slider-hint">Manual override only takes effect in <strong>MANUAL</strong> mode.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="bottom-grid">
+            <section class="panel chart-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">📈</span> Velocity History</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="control-chart"></canvas>
+                </div>
+            </section>
+
+            <section class="panel path-panel">
+                <div class="panel-header">
+                    <h2><span class="icon">🛣️</span> Odom Path</h2>
+                </div>
+                <div class="path-canvas-holder">
+                    <canvas id="odom-path-canvas" width="600" height="320"></canvas>
                 </div>
             </section>
         </div>

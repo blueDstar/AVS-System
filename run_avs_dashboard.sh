@@ -2,7 +2,7 @@
 
 set -e
 
-cd /home/pi/SimpleSysIDV
+cd /home/bluedstar/AVS-System
 
 docker compose -f docker-compose.prod.yml up -d avs_perception video_publisher web_dashboard
 
