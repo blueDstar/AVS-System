@@ -1,0 +1,116 @@
+# =============================================================================
+# AVS Dashboard System — Controller Registry
+# File: config/controllers.yaml
+#
+# Each entry defines how a controller is launched and where it publishes.
+# IMPORTANT: All controllers MUST publish to their own /avs/cmd_vel/<name>
+#            topic, NOT directly to /cmd_vel. The cmd_vel_mux_control node
+#            is the ONLY node allowed to publish to /cmd_vel.
+#
+# If direct_cmd_vel: true, supervisor will warn and use isolated mode.
+# =============================================================================
+
+controllers:
+  # ---------------------------------------------------------------------------
+  # off — special state: mux publishes zero cmd_vel
+  # ---------------------------------------------------------------------------
+  off:
+    type: internal
+    description: "All controllers disabled, robot stopped"
+    cmd_topic: ""
+    direct_cmd_vel: false
+
+  # ---------------------------------------------------------------------------
+  # manual — commands come from the web dashboard joystick
+  # ---------------------------------------------------------------------------
+  manual:
+    type: internal
+    description: "Manual control via dashboard joystick/keyboard"
+    cmd_topic: "/avs/cmd_vel/manual"
+    direct_cmd_vel: false
+
+  # ---------------------------------------------------------------------------
+  # main_pd — Main lane following PD controller
+  # ---------------------------------------------------------------------------
+  main_pd:
+    type: node
+    package: "avs_controlsystem"
+    executable: "main_following_pd"
+    node_name: "main_following_pd"
+    launch: ""
+    cmd_topic: "/avs/cmd_vel/main_pd"
+    direct_cmd_vel: false           # should remap output in its launch
+    description: "Main PD lane following controller"
+    remap_cmd_vel: true             # supervisor will add remap arg
+    params: []
+    required_nodes:
+      - "avs_perception"            # perception must be running
+
+  # ---------------------------------------------------------------------------
+  # pd_lidar — PD + LiDAR obstacle avoidance
+  # ---------------------------------------------------------------------------
+  pd_lidar:
+    type: node
+    package: "avs_controlsystem"
+    executable: "lane_lidar_follower_node"
+    node_name: "lane_lidar_follower_node"
+    launch: ""
+    cmd_topic: "/avs/cmd_vel/pd_lidar"
+    direct_cmd_vel: false
+    description: "PD lane following with LiDAR safety layer"
+    remap_cmd_vel: true
+    params: []
+
+  # ---------------------------------------------------------------------------
+  # backstepping_pd — Backstepping + PD hybrid controller
+  # ---------------------------------------------------------------------------
+  backstepping_pd:
+    type: node
+    package: "avs_controlsystem"
+    executable: "backstepping_pd_node"
+    node_name: "backstepping_pd_node"
+    launch: ""
+    cmd_topic: "/avs/cmd_vel/backstepping_pd"
+    direct_cmd_vel: false
+    description: "Backstepping–PD hybrid lane following controller"
+    remap_cmd_vel: true
+    params: []
+
+  # ---------------------------------------------------------------------------
+  # cascade_pd — Cascade outer-inner PD controller
+  # ---------------------------------------------------------------------------
+  cascade_pd:
+    type: launch
+    package: "avs_cascadecontrol"
+    executable: ""
+    node_name: "cascade_pd_control"
+    launch: "cascade_pd_control.launch.py"
+    cmd_topic: "/avs/cmd_vel/cascade_pd"
+    direct_cmd_vel: false
+    description: "Cascade PD: outer lane PD + inner wheel speed PD"
+    remap_cmd_vel: true
+    params:
+      - name: "enable_cmd"
+        value: "false"             # launch with cmd disabled, mux handles it
+
+  # ---------------------------------------------------------------------------
+  # simulation — controller running inside Gazebo
+  # ---------------------------------------------------------------------------
+  simulation:
+    type: internal
+    description: "Simulation mode — cmd from Gazebo, not from real sensors"
+    cmd_topic: "/avs/cmd_vel/sim"
+    direct_cmd_vel: false
+    gazebo_only: true
+
+# ---------------------------------------------------------------------------
+# Valid controller names for /avs/selected_controller topic
+# ---------------------------------------------------------------------------
+valid_controllers:
+  - "off"
+  - "manual"
+  - "main_pd"
+  - "pd_lidar"
+  - "backstepping_pd"
+  - "cascade_pd"
+  - "simulation"

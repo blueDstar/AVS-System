@@ -1,0 +1,109 @@
+# =============================================================================
+# AVS Dashboard System — Main Configuration
+# File: config/dashboard.yaml
+# =============================================================================
+
+avs_dashboard_system:
+  ros:
+    domain_id: 20
+    robot_name: "avs_robot"
+    namespace: "/avs"
+
+  web:
+    host: "0.0.0.0"
+    port: 8080
+    static_dir: ""          # auto-detect from package
+    cors_origins:
+      - "http://localhost:5173"   # Vite dev server
+      - "http://localhost:8080"
+      - "*"                       # allow all for field use
+
+  websocket:
+    telemetry_hz: 10.0           # WS push rate to frontend
+    log_buffer_size: 500         # max log lines in memory
+    max_clients: 20
+
+  runtime:
+    mode: "real_robot"           # real_robot | gazebo
+    target_runtime: "real_robot" # real_robot | gazebo (safety flag)
+
+  # -------------------------------------------------------------------------
+  # Topic names (all configurable — no hard-coding in nodes)
+  # -------------------------------------------------------------------------
+  topics:
+    # Inputs — sensors
+    cmd_vel: "/cmd_vel"
+    odom_raw: "/odom_raw"
+    imu: "/imu"
+    scan: "/scan"
+    battery: "/battery"
+    camera_raw: "/camera/image_raw"
+    camera_compressed: "/camera/image_raw/compressed"
+
+    # Inputs — AVS control/debug
+    control_error: "/avs/control_error"
+    telemetry: "/avs/telemetry"
+    telemetry_realworld: "/avs/telemetry_realworld"
+    main_pd_debug: "/avs/main_following_pd_debug"
+    lane_pd_state: "/avs/lane_pd_state"
+    wheel_pd_state: "/avs/wheel_pd_state"
+    cascade_control_state: "/avs/cascade_control_state"
+    odom_path_marker: "/avs/odom_path_marker"
+    current_heading_arrow: "/avs/current_heading_arrow"
+    reset_odom_view: "/avs/reset_odom_view"
+
+    # cmd_vel sources (per-controller namespacing)
+    cmd_manual: "/avs/cmd_vel/manual"
+    cmd_main_pd: "/avs/cmd_vel/main_pd"
+    cmd_pd_lidar: "/avs/cmd_vel/pd_lidar"
+    cmd_backstepping_pd: "/avs/cmd_vel/backstepping_pd"
+    cmd_cascade_pd: "/avs/cmd_vel/cascade_pd"
+    cmd_sim: "/avs/cmd_vel/sim"
+
+    # Control/output
+    selected_controller: "/avs/selected_controller"
+    emergency_stop: "/avs/emergency_stop"
+    dashboard_state: "/avs/dashboard_state"
+    cmd_vel_mux_state: "/avs/cmd_vel_mux_state"
+    experiment_summary: "/avs/experiment_summary"
+    controller_comparison: "/avs/controller_comparison"
+
+  # -------------------------------------------------------------------------
+  # Timeout thresholds (seconds)
+  # -------------------------------------------------------------------------
+  timeouts:
+    odom_s: 1.0
+    imu_s: 2.0
+    scan_s: 2.0
+    control_error_s: 3.0
+    camera_s: 5.0
+    cmd_source_s: 0.5       # mux: stop if active source silent
+
+  # -------------------------------------------------------------------------
+  # Safety limits
+  # -------------------------------------------------------------------------
+  safety:
+    v_max: 0.3              # m/s maximum linear velocity
+    v_min: -0.1             # m/s maximum reverse velocity
+    omega_max: 2.0          # rad/s maximum angular velocity
+    max_accel: 0.5          # m/s² acceleration limit (ramp)
+    max_alpha: 1.0          # rad/s² angular acceleration limit
+    emergency_distance: 0.20   # m — hard stop
+    stop_distance: 0.35        # m — stop
+    slow_distance: 0.60        # m — slow down
+    front_angle_deg: 30.0      # degrees — forward LiDAR cone
+
+  # -------------------------------------------------------------------------
+  # Experiment recording
+  # -------------------------------------------------------------------------
+  experiment:
+    base_dir: "~/avs_experiments"
+    auto_plot: true         # generate plots on experiment stop
+    csv_flush_interval_s: 1.0
+
+  # -------------------------------------------------------------------------
+  # Telemetry aggregator
+  # -------------------------------------------------------------------------
+  telemetry:
+    publish_hz: 10.0
+    hz_window_s: 2.0        # sliding window for Hz calculation

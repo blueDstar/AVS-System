@@ -1,0 +1,217 @@
+[0.000000] (-) TimerEvent: {}
+[0.000167] (avs_perception) JobQueued: {'identifier': 'avs_perception', 'dependencies': OrderedDict()}
+[0.000509] (avs_perception) JobStarted: {'identifier': 'avs_perception'}
+[0.007065] (avs_perception) JobProgress: {'identifier': 'avs_perception', 'progress': 'cmake'}
+[0.007487] (avs_perception) JobProgress: {'identifier': 'avs_perception', 'progress': 'build'}
+[0.007963] (avs_perception) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception', '--', '-j12', '-l12'], 'cwd': '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception', 'env': OrderedDict([('GJS_DEBUG_TOPICS', 'JS ERROR;JS LOG'), ('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/goln'), ('USER', 'goln'), ('LC_TIME', 'vi_VN'), ('VSCODE_NLS_CONFIG', '{"userLocale":"en-us","osLocale":"en-us","resolvedLanguage":"en","defaultMessagesFile":"/usr/share/antigravity/resources/app/out/nls.messages.json","locale":"en-us","availableLanguages":{}}'), ('XDG_SESSION_TYPE', 'x11'), ('SHLVL', '0'), ('LD_LIBRARY_PATH', '/home/goln/microros_ws/install/micro_ros_agent/lib:/home/goln/microros_ws/install/micro_ros_msgs/lib:/home/goln/JetbotRos2_ws/install/pkg_interfaces/lib:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/goln'), ('CHROME_DESKTOP', 'antigravity.desktop'), ('DESKTOP_SESSION', 'ubuntu-xorg'), ('VSCODE_IPC_HOOK', '/run/user/1000/vscode-fd0059ab-1.10-main.sock'), ('GIO_LAUNCHED_DESKTOP_FILE', '/usr/share/applications/antigravity.desktop'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('PAGER', 'cat'), ('LC_MONETARY', 'vi_VN'), ('MANAGERPID', '1214'), ('SYSTEMD_EXEC_PID', '1945'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('ANTIGRAVITY_AGENT', '1'), ('GIO_LAUNCHED_DESKTOP_FILE_PID', '2522'), ('IM_CONFIG_PHASE', '1'), ('COLCON_PREFIX_PATH', '/home/goln/microros_ws/install:/home/goln/JetbotRos2_ws/install'), ('ROS_DISTRO', 'humble'), ('GTK_IM_MODULE', 'fcitx'), ('LOGNAME', 'goln'), ('_', '/usr/bin/colcon'), ('JOURNAL_STREAM', '8:7934'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('USERNAME', 'goln'), ('TERM', 'dumb'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('FC_FONTATIONS', '1'), ('ROS_LOCALHOST_ONLY', '0'), ('WINDOWPATH', '2'), ('ANTIGRAVITY_EDITOR_APP_ROOT', '/usr/share/antigravity/resources/app'), ('PATH', '/home/goln/.local/bin:/opt/ros/humble/bin:/home/goln/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin'), ('SESSION_MANAGER', 'local/goln-Nitro-AN515-57:@/tmp/.ICE-unix/1894,unix/goln-Nitro-AN515-57:/tmp/.ICE-unix/1894'), ('INVOCATION_ID', '7ea2ae5e6a524710ae24cd8e6e994544'), ('XDG_MENU_PREFIX', 'gnome-'), ('LC_ADDRESS', 'vi_VN'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':0'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('LC_TELEPHONE', 'vi_VN'), ('XMODIFIERS', '@im=fcitx'), ('XDG_SESSION_DESKTOP', 'ubuntu-xorg'), ('XAUTHORITY', '/run/user/1000/gdm/Xauthority'), ('LS_COLORS', ''), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('AMENT_PREFIX_PATH', '/home/goln/microros_ws/install/micro_ros_setup:/home/goln/microros_ws/install/micro_ros_agent:/home/goln/microros_ws/install/micro_ros_msgs:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/pkg_interfaces:/home/goln/JetbotRos2_ws/install/myrobot:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'vi_VN'), ('QT_ACCESSIBILITY', '1'), ('GDMSESSION', 'ubuntu-xorg'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('LC_MEASUREMENT', 'vi_VN'), ('GPG_AGENT_INFO', '/run/user/1000/gnupg/S.gpg-agent:0:1'), ('GJS_DEBUG_OUTPUT', 'stderr'), ('LC_IDENTIFICATION', 'vi_VN'), ('QT_IM_MODULE', 'fcitx'), ('ANTIGRAVITY_TRAJECTORY_ID', '82b21ade-9a5d-420a-b27f-f447ab846653'), ('PWD', '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg'), ('VSCODE_CODE_CACHE_PATH', '/home/goln/.config/Antigravity/CachedData/15487b3041e65228cae24980a3f796c905ef582c'), ('CLUTTER_IM_MODULE', 'fcitx'), ('XDG_DATA_DIRS', '/usr/share/ubuntu-xorg:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/home/goln/microros_ws/install/micro_ros_msgs/local/lib/python3.10/dist-packages:/home/goln/JetbotRos2_ws/install/yolo_demo/lib/python3.10/site-packages:/home/goln/JetbotRos2_ws/install/pkg_param/lib/python3.10/site-packages:/home/goln/JetbotRos2_ws/install/pkg_action/lib/python3.10/site-packages:/home/goln/JetbotRos2_ws/install/pkg_interfaces/local/lib/python3.10/dist-packages:/home/goln/JetbotRos2_ws/install/learn_launch/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('LC_NUMERIC', 'vi_VN'), ('LC_PAPER', 'vi_VN'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/home/goln/microros_ws/install/micro_ros_setup:/home/goln/microros_ws/install/micro_ros_agent:/home/goln/microros_ws/install/micro_ros_msgs:/home/goln/JetbotRos2_ws/install/pkg_interfaces:/home/goln/JetbotRos2_ws/install/myrobot:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble'), ('VSCODE_PID', '2522')]), 'shell': False}
+[0.040876] (avs_perception) StdoutLine: {'line': b'\x1b[35m\x1b[1mConsolidate compiler generated dependencies of target control_node\x1b[0m\n'}
+[0.050059] (avs_perception) StdoutLine: {'line': b'[ 16%] Built target yolo26_seg_lib\n'}
+[0.050494] (avs_perception) StdoutLine: {'line': b'[ 50%] Built target ipm_transform_node\n'}
+[0.050552] (avs_perception) StdoutLine: {'line': b'[ 50%] Built target video_publisher_node\n'}
+[0.054084] (avs_perception) StdoutLine: {'line': b'[ 58%] \x1b[32mBuilding CXX object CMakeFiles/control_node.dir/src/control_node.cpp.o\x1b[0m\n'}
+[0.069750] (avs_perception) StdoutLine: {'line': b'[ 75%] Built target video_test_node\n'}
+[0.070806] (avs_perception) StdoutLine: {'line': b'[ 91%] Built target ncnn_inference_node\n'}
+[0.099807] (-) TimerEvent: {}
+[0.200083] (-) TimerEvent: {}
+[0.300370] (-) TimerEvent: {}
+[0.400636] (-) TimerEvent: {}
+[0.500902] (-) TimerEvent: {}
+[0.601174] (-) TimerEvent: {}
+[0.701497] (-) TimerEvent: {}
+[0.801977] (-) TimerEvent: {}
+[0.902289] (-) TimerEvent: {}
+[1.002679] (-) TimerEvent: {}
+[1.102982] (-) TimerEvent: {}
+[1.203265] (-) TimerEvent: {}
+[1.303576] (-) TimerEvent: {}
+[1.403867] (-) TimerEvent: {}
+[1.504136] (-) TimerEvent: {}
+[1.604447] (-) TimerEvent: {}
+[1.704839] (-) TimerEvent: {}
+[1.805193] (-) TimerEvent: {}
+[1.905505] (-) TimerEvent: {}
+[2.005856] (-) TimerEvent: {}
+[2.106144] (-) TimerEvent: {}
+[2.206419] (-) TimerEvent: {}
+[2.306731] (-) TimerEvent: {}
+[2.406996] (-) TimerEvent: {}
+[2.507337] (-) TimerEvent: {}
+[2.607660] (-) TimerEvent: {}
+[2.708015] (-) TimerEvent: {}
+[2.808334] (-) TimerEvent: {}
+[2.908627] (-) TimerEvent: {}
+[3.008895] (-) TimerEvent: {}
+[3.109169] (-) TimerEvent: {}
+[3.209513] (-) TimerEvent: {}
+[3.309812] (-) TimerEvent: {}
+[3.410134] (-) TimerEvent: {}
+[3.510448] (-) TimerEvent: {}
+[3.610750] (-) TimerEvent: {}
+[3.711032] (-) TimerEvent: {}
+[3.811361] (-) TimerEvent: {}
+[3.911679] (-) TimerEvent: {}
+[4.011961] (-) TimerEvent: {}
+[4.112260] (-) TimerEvent: {}
+[4.212572] (-) TimerEvent: {}
+[4.312920] (-) TimerEvent: {}
+[4.413224] (-) TimerEvent: {}
+[4.513503] (-) TimerEvent: {}
+[4.613842] (-) TimerEvent: {}
+[4.714146] (-) TimerEvent: {}
+[4.814452] (-) TimerEvent: {}
+[4.914752] (-) TimerEvent: {}
+[5.015046] (-) TimerEvent: {}
+[5.115331] (-) TimerEvent: {}
+[5.215626] (-) TimerEvent: {}
+[5.315953] (-) TimerEvent: {}
+[5.416275] (-) TimerEvent: {}
+[5.516563] (-) TimerEvent: {}
+[5.616847] (-) TimerEvent: {}
+[5.717157] (-) TimerEvent: {}
+[5.817504] (-) TimerEvent: {}
+[5.917817] (-) TimerEvent: {}
+[6.018123] (-) TimerEvent: {}
+[6.118445] (-) TimerEvent: {}
+[6.218753] (-) TimerEvent: {}
+[6.319078] (-) TimerEvent: {}
+[6.419368] (-) TimerEvent: {}
+[6.519616] (-) TimerEvent: {}
+[6.619920] (-) TimerEvent: {}
+[6.720220] (-) TimerEvent: {}
+[6.820530] (-) TimerEvent: {}
+[6.920821] (-) TimerEvent: {}
+[7.021167] (-) TimerEvent: {}
+[7.121494] (-) TimerEvent: {}
+[7.221826] (-) TimerEvent: {}
+[7.322125] (-) TimerEvent: {}
+[7.422387] (-) TimerEvent: {}
+[7.522651] (-) TimerEvent: {}
+[7.622929] (-) TimerEvent: {}
+[7.723238] (-) TimerEvent: {}
+[7.823512] (-) TimerEvent: {}
+[7.923795] (-) TimerEvent: {}
+[8.024139] (-) TimerEvent: {}
+[8.124497] (-) TimerEvent: {}
+[8.224815] (-) TimerEvent: {}
+[8.325098] (-) TimerEvent: {}
+[8.425376] (-) TimerEvent: {}
+[8.525647] (-) TimerEvent: {}
+[8.625942] (-) TimerEvent: {}
+[8.726214] (-) TimerEvent: {}
+[8.826589] (-) TimerEvent: {}
+[8.926946] (-) TimerEvent: {}
+[9.027244] (-) TimerEvent: {}
+[9.127524] (-) TimerEvent: {}
+[9.227820] (-) TimerEvent: {}
+[9.328088] (-) TimerEvent: {}
+[9.428390] (-) TimerEvent: {}
+[9.528660] (-) TimerEvent: {}
+[9.628947] (-) TimerEvent: {}
+[9.729279] (-) TimerEvent: {}
+[9.829610] (-) TimerEvent: {}
+[9.930022] (-) TimerEvent: {}
+[10.030309] (-) TimerEvent: {}
+[10.130661] (-) TimerEvent: {}
+[10.230934] (-) TimerEvent: {}
+[10.331241] (-) TimerEvent: {}
+[10.431613] (-) TimerEvent: {}
+[10.531931] (-) TimerEvent: {}
+[10.632270] (-) TimerEvent: {}
+[10.732596] (-) TimerEvent: {}
+[10.832939] (-) TimerEvent: {}
+[10.933300] (-) TimerEvent: {}
+[11.033693] (-) TimerEvent: {}
+[11.133981] (-) TimerEvent: {}
+[11.234343] (-) TimerEvent: {}
+[11.334599] (-) TimerEvent: {}
+[11.434892] (-) TimerEvent: {}
+[11.535173] (-) TimerEvent: {}
+[11.635481] (-) TimerEvent: {}
+[11.735837] (-) TimerEvent: {}
+[11.836120] (-) TimerEvent: {}
+[11.936446] (-) TimerEvent: {}
+[12.036756] (-) TimerEvent: {}
+[12.137042] (-) TimerEvent: {}
+[12.237309] (-) TimerEvent: {}
+[12.337681] (-) TimerEvent: {}
+[12.437994] (-) TimerEvent: {}
+[12.538265] (-) TimerEvent: {}
+[12.638599] (-) TimerEvent: {}
+[12.738899] (-) TimerEvent: {}
+[12.839184] (-) TimerEvent: {}
+[12.939557] (-) TimerEvent: {}
+[13.039837] (-) TimerEvent: {}
+[13.140117] (-) TimerEvent: {}
+[13.240421] (-) TimerEvent: {}
+[13.340772] (-) TimerEvent: {}
+[13.441127] (-) TimerEvent: {}
+[13.541466] (-) TimerEvent: {}
+[13.641809] (-) TimerEvent: {}
+[13.742075] (-) TimerEvent: {}
+[13.842451] (-) TimerEvent: {}
+[13.942807] (-) TimerEvent: {}
+[14.043114] (-) TimerEvent: {}
+[14.143408] (-) TimerEvent: {}
+[14.243721] (-) TimerEvent: {}
+[14.344042] (-) TimerEvent: {}
+[14.444431] (-) TimerEvent: {}
+[14.544821] (-) TimerEvent: {}
+[14.645162] (-) TimerEvent: {}
+[14.745493] (-) TimerEvent: {}
+[14.845883] (-) TimerEvent: {}
+[14.946164] (-) TimerEvent: {}
+[15.046539] (-) TimerEvent: {}
+[15.146824] (-) TimerEvent: {}
+[15.247122] (-) TimerEvent: {}
+[15.347418] (-) TimerEvent: {}
+[15.447758] (-) TimerEvent: {}
+[15.548060] (-) TimerEvent: {}
+[15.648377] (-) TimerEvent: {}
+[15.748644] (-) TimerEvent: {}
+[15.848953] (-) TimerEvent: {}
+[15.949222] (-) TimerEvent: {}
+[16.049509] (-) TimerEvent: {}
+[16.149785] (-) TimerEvent: {}
+[16.250096] (-) TimerEvent: {}
+[16.350382] (-) TimerEvent: {}
+[16.450661] (-) TimerEvent: {}
+[16.550965] (-) TimerEvent: {}
+[16.651232] (-) TimerEvent: {}
+[16.751551] (-) TimerEvent: {}
+[16.851889] (-) TimerEvent: {}
+[16.952189] (-) TimerEvent: {}
+[17.052500] (-) TimerEvent: {}
+[17.082329] (avs_perception) StdoutLine: {'line': b'[100%] \x1b[32m\x1b[1mLinking CXX executable control_node\x1b[0m\n'}
+[17.152594] (-) TimerEvent: {}
+[17.227531] (avs_perception) StdoutLine: {'line': b'[100%] Built target control_node\n'}
+[17.237082] (avs_perception) CommandEnded: {'returncode': 0}
+[17.238049] (avs_perception) JobProgress: {'identifier': 'avs_perception', 'progress': 'install'}
+[17.245290] (avs_perception) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception'], 'cwd': '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception', 'env': OrderedDict([('GJS_DEBUG_TOPICS', 'JS ERROR;JS LOG'), ('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/goln'), ('USER', 'goln'), ('LC_TIME', 'vi_VN'), ('VSCODE_NLS_CONFIG', '{"userLocale":"en-us","osLocale":"en-us","resolvedLanguage":"en","defaultMessagesFile":"/usr/share/antigravity/resources/app/out/nls.messages.json","locale":"en-us","availableLanguages":{}}'), ('XDG_SESSION_TYPE', 'x11'), ('SHLVL', '0'), ('LD_LIBRARY_PATH', '/home/goln/microros_ws/install/micro_ros_agent/lib:/home/goln/microros_ws/install/micro_ros_msgs/lib:/home/goln/JetbotRos2_ws/install/pkg_interfaces/lib:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/goln'), ('CHROME_DESKTOP', 'antigravity.desktop'), ('DESKTOP_SESSION', 'ubuntu-xorg'), ('VSCODE_IPC_HOOK', '/run/user/1000/vscode-fd0059ab-1.10-main.sock'), ('GIO_LAUNCHED_DESKTOP_FILE', '/usr/share/applications/antigravity.desktop'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('PAGER', 'cat'), ('LC_MONETARY', 'vi_VN'), ('MANAGERPID', '1214'), ('SYSTEMD_EXEC_PID', '1945'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('ANTIGRAVITY_AGENT', '1'), ('GIO_LAUNCHED_DESKTOP_FILE_PID', '2522'), ('IM_CONFIG_PHASE', '1'), ('COLCON_PREFIX_PATH', '/home/goln/microros_ws/install:/home/goln/JetbotRos2_ws/install'), ('ROS_DISTRO', 'humble'), ('GTK_IM_MODULE', 'fcitx'), ('LOGNAME', 'goln'), ('_', '/usr/bin/colcon'), ('JOURNAL_STREAM', '8:7934'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('USERNAME', 'goln'), ('TERM', 'dumb'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('FC_FONTATIONS', '1'), ('ROS_LOCALHOST_ONLY', '0'), ('WINDOWPATH', '2'), ('ANTIGRAVITY_EDITOR_APP_ROOT', '/usr/share/antigravity/resources/app'), ('PATH', '/home/goln/.local/bin:/opt/ros/humble/bin:/home/goln/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin'), ('SESSION_MANAGER', 'local/goln-Nitro-AN515-57:@/tmp/.ICE-unix/1894,unix/goln-Nitro-AN515-57:/tmp/.ICE-unix/1894'), ('INVOCATION_ID', '7ea2ae5e6a524710ae24cd8e6e994544'), ('XDG_MENU_PREFIX', 'gnome-'), ('LC_ADDRESS', 'vi_VN'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':0'), ('LANG', 'en_US.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('LC_TELEPHONE', 'vi_VN'), ('XMODIFIERS', '@im=fcitx'), ('XDG_SESSION_DESKTOP', 'ubuntu-xorg'), ('XAUTHORITY', '/run/user/1000/gdm/Xauthority'), ('LS_COLORS', ''), ('SSH_AGENT_LAUNCHER', 'gnome-keyring'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('AMENT_PREFIX_PATH', '/home/goln/microros_ws/install/micro_ros_setup:/home/goln/microros_ws/install/micro_ros_agent:/home/goln/microros_ws/install/micro_ros_msgs:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/pkg_interfaces:/home/goln/JetbotRos2_ws/install/myrobot:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'vi_VN'), ('QT_ACCESSIBILITY', '1'), ('GDMSESSION', 'ubuntu-xorg'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('LC_MEASUREMENT', 'vi_VN'), ('GPG_AGENT_INFO', '/run/user/1000/gnupg/S.gpg-agent:0:1'), ('GJS_DEBUG_OUTPUT', 'stderr'), ('LC_IDENTIFICATION', 'vi_VN'), ('QT_IM_MODULE', 'fcitx'), ('ANTIGRAVITY_TRAJECTORY_ID', '82b21ade-9a5d-420a-b27f-f447ab846653'), ('PWD', '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg'), ('VSCODE_CODE_CACHE_PATH', '/home/goln/.config/Antigravity/CachedData/15487b3041e65228cae24980a3f796c905ef582c'), ('CLUTTER_IM_MODULE', 'fcitx'), ('XDG_DATA_DIRS', '/usr/share/ubuntu-xorg:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/home/goln/microros_ws/install/micro_ros_msgs/local/lib/python3.10/dist-packages:/home/goln/JetbotRos2_ws/install/yolo_demo/lib/python3.10/site-packages:/home/goln/JetbotRos2_ws/install/pkg_param/lib/python3.10/site-packages:/home/goln/JetbotRos2_ws/install/pkg_action/lib/python3.10/site-packages:/home/goln/JetbotRos2_ws/install/pkg_interfaces/local/lib/python3.10/dist-packages:/home/goln/JetbotRos2_ws/install/learn_launch/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('LC_NUMERIC', 'vi_VN'), ('LC_PAPER', 'vi_VN'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/home/goln/microros_ws/install/micro_ros_setup:/home/goln/microros_ws/install/micro_ros_agent:/home/goln/microros_ws/install/micro_ros_msgs:/home/goln/JetbotRos2_ws/install/pkg_interfaces:/home/goln/JetbotRos2_ws/install/myrobot:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble'), ('VSCODE_PID', '2522')]), 'shell': False}
+[17.251787] (avs_perception) StdoutLine: {'line': b'-- Install configuration: "Release"\n'}
+[17.252082] (avs_perception) StdoutLine: {'line': b'-- Execute custom install script\n'}
+[17.252262] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/lib/avs_perception/libyolo26_seg_lib.a\n'}
+[17.252355] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/lib/avs_perception/ncnn_inference_node\n'}
+[17.252436] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/lib/avs_perception/video_test_node\n'}
+[17.252513] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/lib/avs_perception/video_publisher_node\n'}
+[17.252612] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/lib/avs_perception/ipm_transform_node\n'}
+[17.252666] (-) TimerEvent: {}
+[17.252782] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/lib/avs_perception/control_node\n'}
+[17.252934] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/launch/perception.launch.py\n'}
+[17.253096] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/ament_index/resource_index/package_run_dependencies/avs_perception\n'}
+[17.253193] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/ament_index/resource_index/parent_prefix_path/avs_perception\n'}
+[17.253284] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/environment/ament_prefix_path.sh\n'}
+[17.253367] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/environment/ament_prefix_path.dsv\n'}
+[17.253448] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/environment/path.sh\n'}
+[17.253534] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/environment/path.dsv\n'}
+[17.253648] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/local_setup.bash\n'}
+[17.253727] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/local_setup.sh\n'}
+[17.253807] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/local_setup.zsh\n'}
+[17.253887] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/local_setup.dsv\n'}
+[17.253958] (avs_perception) StdoutLine: {'line': b'-- Symlinking: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/package.dsv\n'}
+[17.262146] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/ament_index/resource_index/packages/avs_perception\n'}
+[17.262327] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/cmake/avs_perceptionConfig.cmake\n'}
+[17.262385] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/cmake/avs_perceptionConfig-version.cmake\n'}
+[17.262439] (avs_perception) StdoutLine: {'line': b'-- Up-to-date symlink: /home/goln/SimpleSysIDV/ros2_ws/install_user/avs_perception/share/avs_perception/package.xml\n'}
+[17.263881] (avs_perception) CommandEnded: {'returncode': 0}
+[17.275246] (avs_perception) JobEnded: {'identifier': 'avs_perception', 'rc': 0}
+[17.275693] (-) EventReactorShutdown: {}

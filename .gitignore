@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# ROS 2 build artifacts
+build/
+install/
+log/
+
+# Node modules
+node_modules/
+.vite/
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+
+# Git nested repos (we flatten them)
+SimpleRobot/.git/

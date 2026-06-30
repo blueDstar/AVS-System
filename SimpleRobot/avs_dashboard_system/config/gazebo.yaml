@@ -1,0 +1,66 @@
+# =============================================================================
+# AVS Dashboard System — Gazebo Configuration
+# File: config/gazebo.yaml
+# =============================================================================
+
+gazebo:
+  install_prefix: ""          # empty = use system Gazebo
+  models_path: "~/.gazebo/models"
+  worlds_path: ""             # empty = use package share path
+
+  # ---------------------------------------------------------------------------
+  # Available simulation worlds
+  # ---------------------------------------------------------------------------
+  worlds:
+    city_lane:
+      name: "city_lane"
+      display_name: "City Lane"
+      world_file: "avs_city_lane.world"
+      launch_file: "avs_city_lane.launch.py"
+      launch_package: "avs_gazebo"        # adjust to your actual package
+      description: "Urban road with lane markings, intersections"
+      thumbnail: ""
+      recommended_speed: 0.06
+
+    figure8_lane:
+      name: "figure8_lane"
+      display_name: "Figure-8 Lane"
+      world_file: "avs_figure8_lane.world"
+      launch_file: "avs_figure8_lane.launch.py"
+      launch_package: "avs_gazebo"
+      description: "Figure-8 closed loop with lane markings for continuous testing"
+      thumbnail: ""
+      recommended_speed: 0.05
+
+  # ---------------------------------------------------------------------------
+  # Simulation robot config
+  # ---------------------------------------------------------------------------
+  robot:
+    model_name: "avs_robot"
+    spawn_x: 0.0
+    spawn_y: 0.0
+    spawn_z: 0.1
+    spawn_yaw: 0.0
+
+  # ---------------------------------------------------------------------------
+  # Topic remapping in simulation
+  # Target cmd_vel inside sim namespace (isolation from real robot)
+  # ---------------------------------------------------------------------------
+  topics:
+    sim_cmd_vel: "/avs/cmd_vel/sim"       # mux source for sim
+    sim_odom: "/odom_raw"                  # same topic name, different data
+    sim_time_topic: "/clock"
+
+  # ---------------------------------------------------------------------------
+  # Safety: when target_runtime = gazebo, real /cmd_vel is blocked
+  # ---------------------------------------------------------------------------
+  safety:
+    block_real_cmd_vel_in_sim: true
+    require_explicit_runtime_flag: true
+
+  # ---------------------------------------------------------------------------
+  # Process monitoring
+  # ---------------------------------------------------------------------------
+  monitor:
+    sim_time_timeout_s: 5.0      # if /clock stops, sim considered failed
+    rtf_low_warning: 0.5         # warn if real-time factor below this

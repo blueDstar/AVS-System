@@ -1,0 +1,15 @@
+[35m[1mConsolidate compiler generated dependencies of target control_node[0m
+[ 16%] Built target yolo26_seg_lib
+[ 33%] Built target ipm_transform_node
+[ 50%] Built target video_publisher_node
+[ 58%] [32mBuilding CXX object CMakeFiles/control_node.dir/src/control_node.cpp.o[0m
+[ 91%] Built target video_test_node
+[ 91%] Built target ncnn_inference_node
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp: In static member function ‘static TrajectoryManager::Decision TrajectoryManager::update(const PlannedTrajectory&, const CommittedTrajectoryState&, const string&, int&, uint64_t)’:
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:682:41: error: ‘trajectory_kind_to_string’ was not declared in this scope; did you mean ‘trajectory_kind_name’?
+  682 |             std::string prev_kind_str = trajectory_kind_to_string(previous_state.trajectory.trajectory_kind);
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                         trajectory_kind_name
+gmake[2]: *** [CMakeFiles/control_node.dir/build.make:76: CMakeFiles/control_node.dir/src/control_node.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:277: CMakeFiles/control_node.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2

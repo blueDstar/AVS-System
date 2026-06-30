@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# ROS 2 build artifacts
+build/
+install/
+log/
+
+# Node modules (source only, dist is kept)
+avs_dashboard_system/web/node_modules/
+avs_dashboard_system/web/.vite/
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,17 @@
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp: In member function ‘ActiveTrajectory LaneErrorNode::connect_two_lanes_smooth(const LaneCandidate&, const LaneCandidate&)’:
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1278:17: error: redeclaration of ‘Point2D P0’
+ 1278 |         Point2D P0 = traj.points.back();
+      |                 ^~
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1267:17: note: ‘Point2D P0’ previously declared here
+ 1267 |         Point2D P0 = traj.points.back();
+      |                 ^~
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1279:17: error: redeclaration of ‘Point2D P3’
+ 1279 |         Point2D P3 = traj_ahead.points.front();
+      |                 ^~
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1268:17: note: ‘Point2D P3’ previously declared here
+ 1268 |         Point2D P3 = traj_ahead.points.front();
+      |                 ^~
+gmake[2]: *** [CMakeFiles/control_node.dir/build.make:76: CMakeFiles/control_node.dir/src/control_node.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:277: CMakeFiles/control_node.dir/all] Error 2
+gmake[1]: *** Waiting for unfinished jobs....
+gmake: *** [Makefile:146: all] Error 2

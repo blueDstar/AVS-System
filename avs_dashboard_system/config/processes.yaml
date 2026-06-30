@@ -1,0 +1,123 @@
+# =============================================================================
+# AVS Dashboard System — Process Manager Whitelist
+# File: config/processes.yaml
+#
+# SECURITY: Only processes listed here can be started/stopped via the dashboard.
+# The process_manager_control node will NOT run arbitrary shell commands.
+# =============================================================================
+
+processes:
+  mainlane_following_pd:
+    label: "Main Lane Following PD"
+    group: "control"
+    type: "ros2_run"
+    container: "avs_perception_container"
+    workspace: "/workspace/ros2_ws"
+    package: "avs_controlsystem"
+    executable: "mainlane_following_controlerror"
+    default_args: ""
+    output_cmd_topic: "/avs/cmd_vel/main_pd"
+    safe_remap_cmd_vel: true
+    remaps:
+      - from: "/cmd_vel"
+        to: "/avs/cmd_vel/main_pd"
+
+  pure_pursuit_mainlane:
+    label: "Pure Pursuit (Main Lane)"
+    group: "control"
+    type: "ros2_run"
+    container: "avs_perception_container"
+    workspace: "/workspace/ros2_ws"
+    package: "avs_controlsystem"
+    executable: "pur_persuit_mainlane_following"
+    default_args: ""
+    output_cmd_topic: "/avs/cmd_vel/pure_pursuit"
+    safe_remap_cmd_vel: true
+    remaps:
+      - from: "/cmd_vel"
+        to: "/avs/cmd_vel/pure_pursuit"
+
+  pure_pursuit_pd_mainlane:
+    label: "Pure Pursuit + PD (Main Lane)"
+    group: "control"
+    type: "ros2_run"
+    container: "avs_perception_container"
+    workspace: "/workspace/ros2_ws"
+    package: "avs_controlsystem"
+    executable: "pur_persuit_pd_mainlane_following"
+    default_args: ""
+    output_cmd_topic: "/avs/cmd_vel/pure_pursuit_pd"
+    safe_remap_cmd_vel: true
+    remaps:
+      - from: "/cmd_vel"
+        to: "/avs/cmd_vel/pure_pursuit_pd"
+
+  start_turn_pure_pursuit:
+    label: "Start/Turn Pure Pursuit"
+    group: "control"
+    type: "ros2_run"
+    container: "avs_perception_container"
+    workspace: "/workspace/ros2_ws"
+    package: "avs_controlsystem"
+    executable: "start_turn_pur_persuit_pd_following"
+    default_args: ""
+    output_cmd_topic: "/avs/cmd_vel/start_turn"
+    safe_remap_cmd_vel: true
+    remaps:
+      - from: "/cmd_vel"
+        to: "/avs/cmd_vel/start_turn"
+
+  lane_lidar_follower:
+    label: "Lane + LiDAR Follower"
+    group: "control"
+    type: "ros2_run"
+    container: "avs_perception_container"
+    workspace: "/workspace/ros2_ws"
+    package: "avs_controlsystem"
+    executable: "lane_lidar_follower_node"
+    default_args: ""
+    output_cmd_topic: "/avs/cmd_vel/lidar_follow"
+    safe_remap_cmd_vel: true
+    remaps:
+      - from: "/cmd_vel"
+        to: "/avs/cmd_vel/lidar_follow"
+
+  perception:
+    label: "AVS Perception"
+    type: "ros2_launch"
+    container: "avs_perception_container"
+    workspace: "/workspace/ros2_ws"
+    package: "avs_perception"
+    launch_file: "perception.launch.py"
+    default_args: ""
+
+  micro_ros_agent:
+    label: "micro-ROS Agent"
+    type: "host_script"
+    host: "raspberry_pi"
+    script: "~/start_agent_rpi5.sh"
+    group: "infrastructure"
+
+  rviz_tools:
+    label: "RViz Tools on Ubuntu"
+    type: "host_script"
+    host: "ubuntu_laptop"
+    script: "~/start_rviz_car.sh"
+
+  gazebo_city:
+    label: "Gazebo City Lane World"
+    type: "ros2_launch"
+    container: ""
+    workspace: "$HOME/SimpleSysIDV/ros2_ws"
+    package: "bluedstar_gazebo"
+    launch_file: "avs_city_lane.launch.py"
+    default_args: ""
+
+  gazebo_figure8:
+    label: "Gazebo Figure-8 World"
+    type: "ros2_launch"
+    container: ""
+    workspace: "$HOME/SimpleSysIDV/ros2_ws"
+    package: "bluedstar_gazebo"
+    launch_file: "avs_figure8_lane.launch.py"
+    default_args: ""

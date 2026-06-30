@@ -1,0 +1,17 @@
+[0.009s] Invoking command in '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble /usr/bin/cmake --build /home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception -- -j12 -l12
+[0.039s] [35m[1mConsolidate compiler generated dependencies of target control_node[0m
+[0.047s] [ 16%] Built target yolo26_seg_lib
+[0.050s] [ 33%] Built target ipm_transform_node
+[0.050s] [ 50%] Built target video_publisher_node
+[0.053s] [ 58%] [32mBuilding CXX object CMakeFiles/control_node.dir/src/control_node.cpp.o[0m
+[0.068s] [ 91%] Built target video_test_node
+[0.068s] [ 91%] Built target ncnn_inference_node
+[1.938s] /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp: In static member function ‘static TrajectoryManager::Decision TrajectoryManager::update(const PlannedTrajectory&, const CommittedTrajectoryState&, const string&, int&, uint64_t)’:
+[1.938s] /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:682:41: error: ‘trajectory_kind_to_string’ was not declared in this scope; did you mean ‘trajectory_kind_name’?
+[1.938s]   682 |             std::string prev_kind_str = trajectory_kind_to_string(previous_state.trajectory.trajectory_kind);
+[1.938s]       |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~
+[1.938s]       |                                         trajectory_kind_name
+[4.364s] gmake[2]: *** [CMakeFiles/control_node.dir/build.make:76: CMakeFiles/control_node.dir/src/control_node.cpp.o] Error 1
+[4.364s] gmake[1]: *** [CMakeFiles/Makefile2:277: CMakeFiles/control_node.dir/all] Error 2
+[4.365s] gmake: *** [Makefile:146: all] Error 2
+[4.367s] Invoked command in '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble /usr/bin/cmake --build /home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception -- -j12 -l12

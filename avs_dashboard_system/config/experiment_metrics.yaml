@@ -1,0 +1,252 @@
+# =============================================================================
+# AVS Dashboard System — Experiment Metrics Definition
+# File: config/experiment_metrics.yaml
+#
+# Defines which metrics are computed per experiment and used in comparison.
+# =============================================================================
+
+metrics:
+  # ---------------------------------------------------------------------------
+  # Time & duration
+  # ---------------------------------------------------------------------------
+  duration_s:
+    label: "Duration"
+    unit: "s"
+    format: ".1f"
+    higher_is_better: true
+    enabled: true
+
+  # ---------------------------------------------------------------------------
+  # Lateral error (from epsilon_x_mm / e_lat_m)
+  # ---------------------------------------------------------------------------
+  mean_abs_lateral_error_mm:
+    label: "MAE Lateral Error"
+    unit: "mm"
+    format: ".2f"
+    higher_is_better: false
+    enabled: true
+    primary: true
+
+  rmse_lateral_error_mm:
+    label: "RMSE Lateral Error"
+    unit: "mm"
+    format: ".2f"
+    higher_is_better: false
+    enabled: true
+    primary: true
+
+  max_abs_lateral_error_mm:
+    label: "Max Lateral Error"
+    unit: "mm"
+    format: ".1f"
+    higher_is_better: false
+    enabled: true
+
+  # ---------------------------------------------------------------------------
+  # Heading error
+  # ---------------------------------------------------------------------------
+  mean_abs_heading_error_rad:
+    label: "MAE Heading Error"
+    unit: "rad"
+    format: ".4f"
+    higher_is_better: false
+    enabled: true
+
+  rmse_heading_error_rad:
+    label: "RMSE Heading Error"
+    unit: "rad"
+    format: ".4f"
+    higher_is_better: false
+    enabled: true
+
+  # ---------------------------------------------------------------------------
+  # Command statistics
+  # ---------------------------------------------------------------------------
+  mean_cmd_v:
+    label: "Mean Speed"
+    unit: "m/s"
+    format: ".3f"
+    higher_is_better: true
+    enabled: true
+
+  mean_abs_cmd_omega:
+    label: "Mean |ω cmd|"
+    unit: "rad/s"
+    format: ".4f"
+    higher_is_better: false
+    enabled: true
+
+  max_abs_cmd_omega:
+    label: "Max |ω cmd|"
+    unit: "rad/s"
+    format: ".4f"
+    higher_is_better: false
+    enabled: true
+
+  cmd_omega_smoothness:
+    label: "ω Smoothness"
+    unit: "rad/s²"
+    format: ".5f"
+    higher_is_better: false
+    enabled: true
+    primary: true
+    description: "mean(|diff(cmd_omega)|) — lower = smoother steering"
+
+  cmd_v_smoothness:
+    label: "v Smoothness"
+    unit: "m/s²"
+    format: ".5f"
+    higher_is_better: false
+    enabled: true
+    description: "mean(|diff(cmd_v)|) — lower = smoother acceleration"
+
+  # ---------------------------------------------------------------------------
+  # Path
+  # ---------------------------------------------------------------------------
+  path_length_m:
+    label: "Path Length"
+    unit: "m"
+    format: ".2f"
+    higher_is_better: true
+    enabled: true
+
+  average_front_distance_m:
+    label: "Avg Front Dist"
+    unit: "m"
+    format: ".3f"
+    higher_is_better: true
+    enabled: true
+
+  # ---------------------------------------------------------------------------
+  # Fault / timeout counts
+  # ---------------------------------------------------------------------------
+  lane_timeout_count:
+    label: "Lane Timeouts"
+    unit: "count"
+    format: "d"
+    higher_is_better: false
+    enabled: true
+
+  odom_timeout_count:
+    label: "Odom Timeouts"
+    unit: "count"
+    format: "d"
+    higher_is_better: false
+    enabled: true
+
+  lidar_stop_count:
+    label: "LiDAR Stops"
+    unit: "count"
+    format: "d"
+    higher_is_better: false
+    enabled: true
+
+  tracking_valid_ratio:
+    label: "Valid Tracking %"
+    unit: "%"
+    format: ".1f"
+    higher_is_better: true
+    enabled: true
+    primary: true
+
+# ---------------------------------------------------------------------------
+# CSV output columns for data.csv
+# ---------------------------------------------------------------------------
+csv_columns:
+  - time_s
+  - controller_name
+  - scenario_name
+  - mode
+  - cmd_v
+  - cmd_omega
+  - odom_x
+  - odom_y
+  - odom_yaw
+  - odom_v
+  - odom_omega
+  - imu_yaw
+  - imu_wz
+  - front_min_m
+  - epsilon_x_mm
+  - epsilon_y_mm
+  - e_lat_m
+  - theta_rad
+  - lane_valid
+  - lane_state
+  - v_ref
+  - omega_ref
+  - v_left_ref
+  - v_right_ref
+  - v_left_meas
+  - v_right_meas
+  - v_cmd_raw
+  - omega_cmd_raw
+  - odom_timeout
+  - ref_timeout
+  - lidar_stop
+
+# ---------------------------------------------------------------------------
+# Plot definitions for auto-generated plots
+# ---------------------------------------------------------------------------
+plots:
+  lateral_error:
+    filename: "lateral_error.png"
+    title: "Lateral Error vs Time"
+    x: "time_s"
+    y:
+      - col: "epsilon_x_mm"
+        label: "ε_x (mm)"
+        color: "#00d4aa"
+      - col: "e_lat_m"
+        label: "e_lat (m×1000)"
+        scale: 1000.0
+        color: "#f59e0b"
+
+  heading_error:
+    filename: "heading_error.png"
+    title: "Heading Error vs Time"
+    x: "time_s"
+    y:
+      - col: "theta_rad"
+        label: "θ (rad)"
+        color: "#818cf8"
+
+  cmd_vel:
+    filename: "cmd_vel.png"
+    title: "Command Velocity vs Time"
+    x: "time_s"
+    y:
+      - col: "cmd_v"
+        label: "v cmd (m/s)"
+        color: "#00d4aa"
+      - col: "cmd_omega"
+        label: "ω cmd (rad/s)"
+        color: "#f87171"
+
+  odom_path:
+    filename: "odom_path.png"
+    title: "Odometry Path (XY)"
+    type: "xy"
+    x: "odom_x"
+    y: "odom_y"
+    color: "#00d4aa"
+
+  wheel_speed:
+    filename: "wheel_speed.png"
+    title: "Wheel Speed Reference vs Measured"
+    x: "time_s"
+    y:
+      - col: "v_left_ref"
+        label: "v_L ref"
+        color: "#00d4aa"
+      - col: "v_right_ref"
+        label: "v_R ref"
+        color: "#818cf8"
+      - col: "v_left_meas"
+        label: "v_L meas"
+        color: "#34d399"
+        linestyle: "--"
+      - col: "v_right_meas"
+        label: "v_R meas"
+        color: "#a78bfa"
+        linestyle: "--"

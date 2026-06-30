@@ -1,0 +1,17 @@
+[35m[1mConsolidate compiler generated dependencies of target control_node[0m
+[ 16%] Built target yolo26_seg_lib
+[ 50%] Built target ipm_transform_node
+[ 50%] Built target video_publisher_node
+[ 58%] [32mBuilding CXX object CMakeFiles/control_node.dir/src/control_node.cpp.o[0m
+[ 91%] Built target video_test_node
+[ 91%] Built target ncnn_inference_node
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp: In member function ‘void LaneErrorNode::telemetry_callback(std_msgs::msg::String_<std::allocator<void> >::SharedPtr)’:
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1537:29: error: ‘geometry_msgs’ has not been declared
+ 1537 |                             geometry_msgs::msg::Point32 ros_pt;
+      |                             ^~~~~~~~~~~~~
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1538:29: error: ‘ros_pt’ was not declared in this scope
+ 1538 |                             ros_pt.x = pt.x;
+      |                             ^~~~~~
+gmake[2]: *** [CMakeFiles/control_node.dir/build.make:76: CMakeFiles/control_node.dir/src/control_node.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:277: CMakeFiles/control_node.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2

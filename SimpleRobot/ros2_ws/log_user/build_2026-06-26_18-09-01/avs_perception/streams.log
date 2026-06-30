@@ -1,0 +1,19 @@
+[0.009s] Invoking command in '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble /usr/bin/cmake --build /home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception -- -j12 -l12
+[0.042s] [35m[1mConsolidate compiler generated dependencies of target control_node[0m
+[0.049s] [ 16%] Built target yolo26_seg_lib
+[0.051s] [ 50%] Built target video_publisher_node
+[0.051s] [ 50%] Built target ipm_transform_node
+[0.057s] [ 58%] [32mBuilding CXX object CMakeFiles/control_node.dir/src/control_node.cpp.o[0m
+[0.069s] [ 91%] Built target video_test_node
+[0.069s] [ 91%] Built target ncnn_inference_node
+[1.903s] /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp: In member function ‘void LaneErrorNode::telemetry_callback(std_msgs::msg::String_<std::allocator<void> >::SharedPtr)’:
+[1.903s] /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1168:25: error: ‘geometry_msgs’ has not been declared
+[1.903s]  1168 |                         geometry_msgs::msg::Point32 ros_pt;
+[1.903s]       |                         ^~~~~~~~~~~~~
+[1.907s] /home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:1169:25: error: ‘ros_pt’ was not declared in this scope
+[1.907s]  1169 |                         ros_pt.x = pt.x;
+[1.907s]       |                         ^~~~~~
+[4.208s] gmake[2]: *** [CMakeFiles/control_node.dir/build.make:76: CMakeFiles/control_node.dir/src/control_node.cpp.o] Error 1
+[4.208s] gmake[1]: *** [CMakeFiles/Makefile2:277: CMakeFiles/control_node.dir/all] Error 2
+[4.208s] gmake: *** [Makefile:146: all] Error 2
+[4.210s] Invoked command in '/home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/goln/JetbotRos2_ws/install/yolo_demo:/home/goln/JetbotRos2_ws/install/pkg_param:/home/goln/JetbotRos2_ws/install/pkg_action:/home/goln/JetbotRos2_ws/install/learn_launch:/opt/ros/humble /usr/bin/cmake --build /home/goln/SimpleSysIDV/ros2_ws/build_user/avs_perception -- -j12 -l12

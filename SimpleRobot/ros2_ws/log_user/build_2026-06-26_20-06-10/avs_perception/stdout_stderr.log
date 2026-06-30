@@ -1,0 +1,14 @@
+[35m[1mConsolidate compiler generated dependencies of target control_node[0m
+[ 16%] Built target yolo26_seg_lib
+[ 41%] Built target ipm_transform_node
+[ 50%] Built target video_publisher_node
+[ 58%] [32mBuilding CXX object CMakeFiles/control_node.dir/src/control_node.cpp.o[0m
+[ 91%] Built target ncnn_inference_node
+[ 91%] Built target video_test_node
+/home/goln/SimpleSysIDV/ros2_ws/src/avs_perception/src/control_node.cpp:40:10: fatal error: nav_msgs/msg/odometry.hpp: No such file or directory
+   40 | #include "nav_msgs/msg/odometry.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+gmake[2]: *** [CMakeFiles/control_node.dir/build.make:76: CMakeFiles/control_node.dir/src/control_node.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:277: CMakeFiles/control_node.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
